@@ -1,4 +1,4 @@
-# Drupal Module: Module Name
+# Drupal Module: Loft Social Extras
 **Author:** Aaron Klump  <sourcecode@intheloftstudios.com>
 
 ## Summary
