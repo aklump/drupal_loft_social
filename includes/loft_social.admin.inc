@@ -29,7 +29,7 @@ function loft_social_settings($form, &$form_state) {
   );
   if (!module_exists('shorten')) {
     $form['twitter']['shorten'] = array(
-      '#markup' => t('You should enable the <a href="!url">Shorten URLS module</a> to get short URLS for some services such as Twitter.', array(
+      '#markup' => t('<span class="error">You should enable the <a href="!url">Shorten URLS module</a> to get short URLS for some services such as Twitter.</span>', array(
         '!url' => url('https://drupal.org/project/shorten'), 
       )),
     );
@@ -37,7 +37,7 @@ function loft_social_settings($form, &$form_state) {
 
   $form['twitter']['manage'] = array(
     '#markup' => t('Manage your twitter account <a href="!url">here.</a>', array(
-      '!url' => url('admin/config/services/on_the_web', array(
+      '!url' => url(LOFT_SOCIAL_URL_OTW_SETTINGS, array(
         'query' => drupal_get_destination(), 
       )),
     )),
@@ -63,8 +63,11 @@ function loft_social_settings($form, &$form_state) {
     );
 
     $form['facebook']['manage'] = array(
-      '#markup' => t('Manage your facebook preset(s) <a href="!url">here</a>.', array (
-        '!url' => url('admin/structure/fbsocial/presets', array(
+      '#markup' => t('Manage your facebook <a href="!url2">master settings</a> and your <a href="!url">preset(s)</a>.', array (
+        '!url' => url(LOFT_SOCIAL_URL_FB_PRESETS, array(
+          'query' => drupal_get_destination(), 
+        )), 
+        '!url2' => url(LOFT_SOCIAL_URL_FB_SETTINGS, array(
           'query' => drupal_get_destination(), 
         )), 
       )),
@@ -72,8 +75,8 @@ function loft_social_settings($form, &$form_state) {
   }
   else {
     $form['facebook']['manage'] = array(
-      '#markup' => t('Please <a href="!url">create</a> at least one Facebook like preset.', array (
-        '!url' => url('admin/structure/fbsocial/presets/add', array(
+      '#markup' => t('<span class="error">Please <a href="!url">create</a> at least one Facebook like preset.</span>', array (
+        '!url' => url(LOFT_SOCIAL_URL_FB_PRESETS . '/add', array(
           'query' => drupal_get_destination(), 
         )), 
       )),
@@ -151,6 +154,20 @@ function loft_social_settings($form, &$form_state) {
     '#default_value' => variable_get('loft_social_block_count_website', LOFT_SOCIAL_BLOCK_COUNT_WEBSITE),
     '#options' => drupal_map_assoc(range(0, 15)),
   );
+
+  if ($snippet = _loft_social_settings_snippet()) {
+    $form['settings'] = array(
+      '#type' => 'textarea',
+      '#title' => '<code>settings.php</code> Protected Values', 
+      '#description' => t('Once you are satisfied with your configuration, please add this snippet to <code>settings.php</code> to protect your website.'),  
+      '#default_value' => $snippet,
+      '#rows' => 5,
+      '#attributes' => array(
+        'readonly' => 'readonly', 
+      ),
+      '#resizable' => TRUE,
+    );
+  }  
 
   return system_settings_form($form);
 }

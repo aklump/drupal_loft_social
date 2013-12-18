@@ -23,8 +23,8 @@ Furthermore, it makes sure you use http instead of https for your social page li
 1. Install as usual, see [http://drupal.org/node/70151](http://drupal.org/node/70151) for further information.
 1. This module needs a fb_social like preset, so if you haven't created one, do so now.
 1. Set your twitter url in the On the Web settings form.
-1. Now, submit the form at `admin/structure/fbsocial` at least once for this module to do it's magic.
-2. After submitting, copy the text at the bottom of the form and paste into `settings.php`.
+1. Now, set Base URL at `admin/structure/fbsocial` and this module will do it's magic.
+1. Return to the module settings page and copy the text at the bottom of the form and paste into `settings.php`.
 
 ## API
 

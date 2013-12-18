@@ -9,6 +9,9 @@
 
 // Path to the admin settings form
 define('LOFT_SOCIAL_URL_SETTINGS', 'admin/config/services/loft-social');
+define('LOFT_SOCIAL_URL_FB_SETTINGS', 'admin/structure/fbsocial');
+define('LOFT_SOCIAL_URL_FB_PRESETS', 'admin/structure/fbsocial/presets');
+define('LOFT_SOCIAL_URL_OTW_SETTINGS', 'admin/config/services/on_the_web');
 define('LOFT_SOCIAL_PLACEMENT', 0);
 define('LOFT_SOCIAL_BLOCK_COUNT', 0);
 define('LOFT_SOCIAL_BLOCK_COUNT_WEBSITE', 0);
@@ -45,12 +48,22 @@ function loft_social_menu() {
 }
 
 function _loft_social_settings_snippet() {
-  global $conf;
+  $keys = array(
+    'fb_social_base_url', 
+    'fb_social_urls_mode',
+    'on_the_web_twitter_page',
+    'on_the_web_facebook_page',
+    'on_the_web_pinterest_page',
+  );
 
-  return <<<EOD
-\$conf['fb_social_base_url'] = "${conf['fb_social_base_url']}";
-\$conf['fb_social_urls_mode'] = ${conf['fb_social_urls_mode']};
-EOD;
+  $output = array();
+  foreach ($keys as $key) {
+    if ($value = variable_get($key, '')) {
+      $output[] = "\$conf['$key'] = \"$value\";";
+    }
+  }
+
+  return implode("\n", $output);
 }
 
 /**
@@ -81,19 +94,7 @@ function loft_social_form_fb_social_admin_settings_form_alter(&$form, $form_stat
   $form['fb_social_urls']['fb_social_urls_mode']['#default_value'] = 1;
   $form['fb_social_urls']['fb_social_urls_mode']['#description'] = t("<em>Options have been removed by Facebook Social Loft Extras.</em>");
   $form['fb_social_urls']['fb_social_urls_mode']['#options'] = array_intersect_key($form['fb_social_urls']['fb_social_urls_mode']['#options'], array(1 => 1));
-
-  $form['settings'] = array(
-    '#type' => 'textarea',
-    '#title' => '<code>settings.php</code> Protected Values', 
-    '#description' => t('Once you are satisfied with your configuration, please add this snippet to <code>settings.php</code> to protect your website.'),  
-    '#default_value' => _loft_social_settings_snippet(),
-    '#rows' => 6,
-    '#attributes' => array(
-      'readonly' => 'readonly', 
-    ),
-    '#resizable' => TRUE,
-  );
-
+  
   $form['#validate'][] = 'loft_social_form_fb_social_admin_settings_form_validate'; 
   $form['#submit'][] = 'loft_social_form_fb_social_admin_settings_form_submit'; 
 
@@ -111,6 +112,12 @@ function loft_social_form_fb_social_admin_settings_form_validate($form, &$form_s
     drupal_set_message(t("For improved compatiblity we've removed the <em>https</em> from %url.", array(
       '%url' => $url, 
     )), 'warning', FALSE);
+  }
+
+  // Make sure we start with http://
+  if (strpos($url, 'http://') !== 0) {
+    $url = 'http://' . $url;
+    drupal_set_message(t("We've added http:// as a prefix to the Base URL you submitted."), 'warning', FALSE);
   }
 
   form_set_value($form['fb_social_urls']['fb_social_base_url'], $url, $form_state);
@@ -204,7 +211,7 @@ function loft_social_fb_like_button($url = NULL) {
   if (!($preset = variable_get('loft_social_fb_preset_like', ''))
     && user_access('loft_social:administer')) {
     drupal_set_message(t('Please <a href="!url">create</a> at least one Facebook like preset and <a href="!url2">define it in your settings</a>.', array(
-      '!url' => url('admin/structure/fbsocial/presets/add', array(
+      '!url' => url(LOFT_SOCIAL_URL_FB_PRESETS . '/add', array(
         'query' => array(
           'destination' => url(LOFT_SOCIAL_URL_SETTINGS)
         ),
