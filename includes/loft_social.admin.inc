@@ -21,17 +21,33 @@
  */
 function loft_social_settings($form, &$form_state) {
 
-  $form['loft_social_placement'] = array(
-    '#type' => 'radios',
-    '#title' => t('Placement of page-linked Like, Tweet buttons'),
-    '#default_value' => variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT),
-    '#options' => array(
-      0 => t('<em>Do not render</em>'),
-      1 => t('Before the Page Title on Every Non-Admin Page'), 
-      2 => t('After the Page Title on Every Non-Admin Page'), 
-      3 => t('Node Links'), 
-      4 => t('Node Content'), 
-    ),
+  $form['twitter'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Twitter'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  if (!module_exists('shorten')) {
+    $form['twitter']['shorten'] = array(
+      '#markup' => t('You should enable the <a href="!url">Shorten URLS module</a> to get short URLS for some services such as Twitter.', array(
+        '!url' => url('https://drupal.org/project/shorten'), 
+      )),
+    );
+  }
+
+  $form['twitter']['manage'] = array(
+    '#markup' => t('Manage your twitter account <a href="!url">here.</a>', array(
+      '!url' => url('admin/config/services/on_the_web', array(
+        'query' => drupal_get_destination(), 
+      )),
+    )),
+  );
+
+  $form['facebook'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Facebook'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
   );
 
   if ($data = fb_social_get_presets_by_type('like')) {
@@ -39,22 +55,72 @@ function loft_social_settings($form, &$form_state) {
     foreach ($data as $value) {
       $options[$value->name] = $value->description;
     }
-    $form['loft_social_fb_preset_like'] = array(
+    $form['facebook']['loft_social_fb_preset_like'] = array(
       '#type' => 'select',
-      '#title' => t('Preset to use or Facebook Like button(s)'),
+      '#title' => t('Preset to use for  the Facebook Like button(s)'),
       '#default_value' => variable_get('loft_social_fb_preset_like', reset($options)),
       '#options' => $options,
-    );  
+    );
+
+    $form['facebook']['manage'] = array(
+      '#markup' => t('Manage your facebook preset(s) <a href="!url">here</a>.', array (
+        '!url' => url('admin/structure/fbsocial/presets', array(
+          'query' => drupal_get_destination(), 
+        )), 
+      )),
+    );
   }
   else {
-    $form['loft_social_fb_preset_like'] = array(
-      '#markup' => t('Please <a href="!url">create</a> at least one Facebook like preset.', array(
+    $form['facebook']['manage'] = array(
+      '#markup' => t('Please <a href="!url">create</a> at least one Facebook like preset.', array (
         '!url' => url('admin/structure/fbsocial/presets/add', array(
           'query' => drupal_get_destination(), 
         )), 
       )),
     );
   }
+
+  $form['rendering'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Placement on Website'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+
+  $form['rendering']['loft_social_placement'] = array(
+    '#type' => 'radios',
+    '#title' => t('Page placement of social buttons'),
+    '#default_value' => variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT),
+    '#options' => array(
+      0 => t('<em>Hidden</em>'),
+      1 => t('Before the Page Title on all public pages <sup>1</sup>'), 
+      2 => t('After the Page Title on all public pages <sup>1</sup>'), 
+      3 => t('Node Links <sup>2</sup>'), 
+      4 => t('Node Content <sup>2</sup>'), 
+    ),
+  );
+
+  $form['rendering']['weight'] = array(
+    '#type' => 'container',
+    '#states' => array(
+      'visible' => array(
+        ':input[name=loft_social_placement]' => array('value' => 4),
+      ),
+    ),
+  );
+
+  $form['rendering']['weight']['loft_social_placement_weight'] = array(
+    '#type' => 'weight',
+    '#title' => t('Weight'),
+    '#description' => t('The lower weight will push this closer to the top in the node content render array.'),
+    '#default_value' => variable_get('loft_social_placement_weight', 0),
+    '#delta' => 10, //the range is from -1 * delta through delta
+  );
+
+  $form['rendering']['footnotes'] = array(
+    '#weight' => '100', 
+    '#markup' => t('<p><sup>1</sup> Pages are considered public if they are viewable by an anonymous user.</p><p><sup>2</sup> Buttons will not appear on non-node pages.</p>'), 
+  );  
   
   $vars = array(
     '!url' => url('admin/structure/block', array(
@@ -62,7 +128,15 @@ function loft_social_settings($form, &$form_state) {
     )),
   );
 
-  $form['loft_social_block_count'] = array(
+  $form['rendering']['blocks'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Blocks'),
+    '#description' => t('Blocks are independent of page placement.'), 
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['rendering']['blocks']['loft_social_block_count'] = array(
     '#type' => 'select',
     '#title' => t('Number of page-linked blocks to provide?'),
     '#description' => t('This many blocks of page links will be <a href="!url">available</a> for placement by region.', $vars), 
@@ -70,7 +144,7 @@ function loft_social_settings($form, &$form_state) {
     '#options' => drupal_map_assoc(range(0, 15)),
   );
 
-  $form['loft_social_block_count_website'] = array(
+  $form['rendering']['blocks']['loft_social_block_count_website'] = array(
     '#type' => 'select',
     '#title' => t('Number of website-linked blocks to provide?'),
     '#description' => t('This many blocks of website links (no matter where they are in your site the like, tweet, etc buttons will all point to the website homepage) will be <a href="!url">available</a> for placement by region.', $vars), 

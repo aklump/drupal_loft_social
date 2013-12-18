@@ -9,7 +9,6 @@
 
 // Path to the admin settings form
 define('LOFT_SOCIAL_URL_SETTINGS', 'admin/config/services/loft-social');
-define('LOFT_SOCIAL_FB_PRESET_LIKE', 'like_page');
 define('LOFT_SOCIAL_PLACEMENT', 0);
 define('LOFT_SOCIAL_BLOCK_COUNT', 0);
 define('LOFT_SOCIAL_BLOCK_COUNT_WEBSITE', 0);
@@ -60,9 +59,18 @@ EOD;
 function loft_social_form_ctools_export_ui_edit_item_form_alter(&$form, $form_state, $form_id) {
   if (!empty($form['info']['name']['#value'])
     && ($id = $form['info']['name']['#value'])
-    && $id === LOFT_SOCIAL_FB_PRESET_LIKE) {
+    && $id === variable_get('loft_social_fb_preset_like', '')) {
     $form['fb_social_settings_like']['settings_like']['#collapsed'] = TRUE;
   }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function loft_social_form_shorten_admin_alter(&$form, $form_state, $form_id) {
+  // Provide more sensible defaults
+  $form['shorten_www']['#default_value'] = variable_get('shorten_www', 0);
+  $form['shorten_cache_clear_all']['#default_value'] = variable_get('shorten_www', 0);
 }
 
 /**
@@ -267,7 +275,7 @@ function loft_social_tweet_button($url = NULL) {
   
   $http_protocol  = $is_https ? 'https' : 'http';  
   $url            = loft_social_get_page_url($url);
-  $tiny           = loft_social_shorten_url($url);
+  $tiny           = shorten_url($url);
 
   // Gleen the hero image of the page
   if (($node = menu_get_object())) {
@@ -438,11 +446,13 @@ function loft_social_block_view($delta = '') {
 function loft_social_node_view_alter(&$build) {
   switch (variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT)) {
     case 3:
-      $build['loft_social'] = _loft_social_links_array();
+      $links = _loft_social_links_array();
+      $build['links'] += $links['links'];
       break;
     
     case 4:
       $build['loft_social'] = _loft_social_links_array();
+      $build['loft_social']['#weight'] = variable_get('loft_social_placement_weight', 0);
       break;
   }
 }
@@ -451,21 +461,64 @@ function loft_social_node_view_alter(&$build) {
  * Implements hook_init().
  */
 function loft_social_init() {
-  // Flag our fb_share module to install the necessary js when we are placing
-  // in the page, the reason is that we place in preprocess_page which comes
-  // AFTER the fb_share modules page_alter, so we have to prep it here.
-  if (!path_is_admin(current_path())
-    && in_array(variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT), array(1, 2))) {
-    global $_fb_script_init;
+  global $_fb_script_init, $_loft_social_page_placement;
+  if (in_array(variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT), array(1, 2))
+    && loft_social_show_on_page()) {
+
+    // Flag our fb_share module to install the necessary js when we are placing
+    // in the page, the reason is that we place in preprocess_page which comes
+    // AFTER the fb_share modules page_alter, so we have to prep it here.
     $_fb_script_init = TRUE;    
+    $_loft_social_page_placement = TRUE;
   }
+}
+
+/**
+ * Return if the current page should have links applied
+ *
+ * Caller should also check loft_social_placement var
+ *
+ * @return bool
+ */
+function loft_social_show_on_page() {
+  $context = array(
+    'url' => current_path(),
+    'access' => FALSE, 
+  );
+
+  // For admin paths we'll skip the anonymous check
+  if (!path_is_admin($context['url'])) {
+
+    // For non-admins we'll see if anonymous can see it...
+    
+    // Prevent session information from being saved while doing funky stuff.
+    drupal_save_session(FALSE);
+    
+    // Force the current user to anonymous to ensure consistent permissions on
+    // funky stuff runs.
+    $original_user = $GLOBALS['user'];
+    $GLOBALS['user'] = drupal_anonymous_user();
+    
+    if ($router_item = menu_get_item($context['url'])) {
+      $context['access'] = $router_item['access'];
+    }
+    
+    // Restore the user.
+    $GLOBALS['user'] = $original_user;
+    drupal_save_session(TRUE);
+  }
+  
+  drupal_alter('loft_social_show_on_page', $context);
+
+  return $context['access'];
 }
 
 /**
  * Implements hook_preprocess_page().
  */
 function loft_social_preprocess_page(&$vars) {
-  if (!path_is_admin(current_path())) {
+  global $_loft_social_page_placement;
+  if ($_loft_social_page_placement) {
     switch (variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT)) {
       case 1:
         $vars['title_prefix']['loft_social'] = _loft_social_links_array();
