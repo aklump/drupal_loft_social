@@ -1,0 +1,11 @@
+name = Loft Social Extras
+description = A helper module for social integrations.
+package = Custom
+version = 7.x-0.1
+core = 7.x
+
+dependencies[] = on_the_web
+dependencies[] = fb_social
+dependencies[] = metatag
+
+files[] = tests/loft_social.test

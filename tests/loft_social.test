@@ -1,0 +1,105 @@
+<?php
+/**
+ * @file
+ * Simpletests for the module
+ *
+ * @ingroup loft_social
+ * @{
+ */
+class LoftSocialUnitTestCase extends DrupalUnitTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Loft Social Extras Unit tests',
+      'description' => 'Unit testing for the Loft Social Extras module.',
+      'group' => 'Loft Social Extras',
+    );
+  }
+  public function setUp($modules = array()) {
+    if (!is_array($modules)) {
+      $modules = func_get_args();
+    }
+    // List the modules you need to enable for testing
+    $modules += array('loft_social');
+    $modules = array_unique($modules);
+    parent::setUp($modules);
+  }
+
+
+}
+
+class LoftSocialWebTestCase extends DrupalWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Loft Social Extras Integration tests',
+      'description' => 'Integration testing for the Loft Social Extras module.',
+      //'group' => 'WebsiteName.com: loft_social',
+      'group' => 'Loft Social Extras',
+    );
+  }
+  public function setUp($modules = array()) {
+    if (!is_array($modules)) {
+      $modules = func_get_args();
+    }
+    // List the modules you need to enable for testing
+    $modules += array('loft_social');
+    $modules = array_unique($modules);
+    parent::setUp($modules);
+
+    // Define our social variables
+    variable_set('on_the_web_twitter_page',   "http://www.twitter.com/clarkkent");
+    variable_set('on_the_web_facebook_page',  "http://www.facebook.com/Clark.Kent");
+    variable_set('on_the_web_pinterest_page', "https://pinterest.com/clarkkent/");
+    variable_set('on_the_web_google_page',    "https://plus.google.com/5551212/posts");
+    variable_set('on_the_web_youtube_page',   "http://www.youtube.com/user/ClarkKent");    
+  }
+
+  public function testGroup1() {
+    $this->subtest__loft_social_get_name();
+    $this->subtest__loft_social_get_page_url();
+    $this->subtest__loft_social_post_render_meta_tags();
+  }
+
+
+  // Add your unit & integration tests here...
+  public function subtest__loft_social_get_name() {
+    $_control_group = 'loft_social_get_name';
+
+    $result = loft_social_get_name('twitter');
+    $this->assertIdentical('clarkkent', $result, "Assert twitter name works.", $_control_group);
+    
+    $result = loft_social_get_name('facebook');
+    $this->assertIdentical('Clark.Kent', $result, "Assert facebook name works.", $_control_group);
+
+    $result = loft_social_get_name('pinterest');
+    $this->assertIdentical('clarkkent', $result, "Assert pinterest name works.", $_control_group);
+
+    $result = loft_social_get_name('google');
+    $this->assertIdentical('5551212', $result, "Assert google name works.", $_control_group);
+
+    $result = loft_social_get_name('youtube');
+    $this->assertIdentical('ClarkKent', $result, "Assert youtube name works.", $_control_group);
+  }
+
+  public function subtest__loft_social_get_page_url() {
+    $result = loft_social_get_page_url('https://www.intheloftstudios.com');
+    $this->assertIdentical('http://www.intheloftstudios.com', $result, 'Assert s is stripped from http.');
+  }
+
+  public function subtest__loft_social_post_render_meta_tags() {
+    $subject = '<h3>My markup</h3>';
+    $element = array(
+      '#loft_social_metatags' => array(
+        '#service' => 'twitter',
+        array(
+          'name' => 'twitter:widgets:csp', 
+          'content' => 'on', 
+        )
+      ),
+    );
+    $result = loft_social_post_render_meta_tags($subject, $element);
+    $this->assertIdentical($subject, $result, "Assert markup is passed through untouched.");
+
+    $return = drupal_add_html_head();
+    $this->assertTrue(array_key_exists('twitter_twitter:widgets:csp_on', $return), 'Assert the meta tag has been added to drupal_add_html_head().');
+  }  
+}

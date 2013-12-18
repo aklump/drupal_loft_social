@@ -1,0 +1,17 @@
+@import "compass";
+.loft-social-links {
+  margin: 10px 0;
+  padding: 0;
+  li {
+    margin: 0;
+    padding: 0;
+    margin-right: 10px;
+    @include inline-block;
+  }
+}
+.loft-social-links.title-prefix {
+  margin-bottom: 0;
+}
+.loft-social-links.title-suffix {
+  margin-top: 0;
+}
