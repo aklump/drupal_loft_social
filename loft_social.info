@@ -1,7 +1,7 @@
 name = Loft Social Extras
 description = A helper module for social integrations.
 package = Custom
-version = 7.x-0.3-rc2
+version = 7.x-0.3-rc3
 core = 7.x
 
 dependencies[] = on_the_web
