@@ -96,12 +96,72 @@ function loft_social_settings($form, &$form_state) {
     '#default_value' => variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT),
     '#options' => array(
       0 => t('<em>Hidden</em>'),
-      1 => t('Before the Page Title on all public pages <sup>1</sup>'), 
-      2 => t('After the Page Title on all public pages <sup>1</sup>'), 
+      1 => t('Before the Page Title'), 
+      2 => t('After the Page Title'), 
       3 => t('Node Links <sup>2</sup>'), 
       4 => t('Node Content <sup>2</sup>'), 
     ),
   );
+
+
+  // Per-path visibility.
+  $form['rendering']['path'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Pages'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#group' => 'visibility',
+    '#states' => array(
+      'visible' => array(
+        ':input[name=loft_social_placement]' => array(
+          array('value' => 1),
+          array('value' => 2),
+        ),
+      ),
+    ),    
+  );
+  
+  $access = user_access('use PHP for settings');
+  $page_visibility = variable_get('loft_social_page_visibility', BLOCK_VISIBILITY_NOTLISTED);
+  $pages = variable_get('loft_social_pages', LOFT_SOCIAL_PAGES);
+  if ($page_visibility == BLOCK_VISIBILITY_PHP && !$access) {
+    $form['rendering']['path']['loft_social_page_visibility'] = array(
+      '#type' => 'value',
+      '#value' => BLOCK_VISIBILITY_PHP,
+    );
+    $form['rendering']['path']['loft_social_pages'] = array(
+      '#type' => 'value',
+      '#value' => $pages,
+    );
+  }
+  else {
+    $options = array(
+      BLOCK_VISIBILITY_NOTLISTED => t('All public pages <sup>1</sup> except those listed'),
+      BLOCK_VISIBILITY_LISTED => t('Only the listed pages'),
+    );
+    $description = t("Specify pages by using their paths. Enter one path per line. The '*' character is a wildcard. Example paths are %blog for the blog page and %blog-wildcard for every personal blog. %front is the front page.", array('%blog' => 'blog', '%blog-wildcard' => 'blog/*', '%front' => '<front>'));
+
+    if (module_exists('php') && $access) {
+      $options += array(BLOCK_VISIBILITY_PHP => t('Pages on which this PHP code returns <code>TRUE</code> (experts only)'));
+      $title = t('Pages or PHP code');
+      $description .= ' ' . t('If the PHP option is chosen, enter PHP code between %php. Note that executing incorrect PHP code can break your Drupal site.', array('%php' => '<?php ?>'));
+    }
+    else {
+      $title = t('Pages');
+    }
+    $form['rendering']['path']['loft_social_page_visibility'] = array(
+      '#type' => 'radios',
+      '#title' => t('Show social links on specific pages'),
+      '#options' => $options,
+      '#default_value' => $page_visibility,
+    );
+    $form['rendering']['path']['loft_social_pages'] = array(
+      '#type' => 'textarea',
+      '#title' => '<span class="element-invisible">' . $title . '</span>',
+      '#default_value' => $pages,
+      '#description' => $description,
+    );
+  }
 
   $form['rendering']['weight'] = array(
     '#type' => 'container',
@@ -134,7 +194,7 @@ function loft_social_settings($form, &$form_state) {
   $form['rendering']['blocks'] = array(
     '#type' => 'fieldset',
     '#title' => t('Blocks'),
-    '#description' => t('Blocks are independent of page placement.'), 
+    '#description' => t('Blocks are independent and may be in addition to page placement.'), 
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );

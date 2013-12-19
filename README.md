@@ -7,13 +7,13 @@
 It provides a set of social buttons that can be placed in your website in several ways: on all public pages, on all node pages as part of node content or node links, or as one or more blocks placed in regions.  It's up to you to decide how you'd like to use it.
 
 ### Facebook
-This module leverages [Facebook Social][fb_social] module and overrides form values and metatags to increase the likelihood that you are setup correctly for Facebook.  It insures that the following values in your html source on the front page match exactly.
+This module leverages the [Facebook Social][fb_social] and provides a default like preset.  It also leverages the [Metatag][metatag] modules and overrides form values and metatags to increase the likelihood that you are setup correctly for Facebook.  It insures that the following values in your html source on the front page match exactly.
 
 1. og:url
 2. shortlink
 3. canonical
 
-Furthermore, it makes sure you use http instead of https for your social page links.
+Furthermore, it makes sure you use `http` instead of `https` for your social page links.
 
 ### Twitter
 * This module works hand-in-hand with [On the Web][on_the_web] to create a tweet button from the account you've entered in On the Web.
@@ -21,10 +21,11 @@ Furthermore, it makes sure you use http instead of https for your social page li
 
 ## Installation/Configuration
 1. Install as usual, see [http://drupal.org/node/70151](http://drupal.org/node/70151) for further information.
-1. This module needs a fb_social like preset, so if you haven't created one, do so now.
+1. Visit `admin/structure/fbsocial` and set your _Facebook application id_ and _Base URL_ and submit the form.
+1. Visit `admin/config/services/loft-social` and review/alter/submit the settings form.
+
 1. Set your twitter url in the On the Web settings form.
-1. Now, set Base URL at `admin/structure/fbsocial` and this module will do it's magic.
-1. Return to the module settings page and copy the text at the bottom of the form and paste into `settings.php`.
+1. Return to the module settings page and copy the text at the bottom of the form and paste into `settings.php` if you wish to disable the ability for admins to change these settings (a good idea once you start getting like counts, etc.)
 
 ## API
 
@@ -47,3 +48,4 @@ To encapsulate a common pattern in a module.
 [on_the_web]: https://drupal.org/project/on_the_web
 [shorten]: https://drupal.org/project/shorten
 [fb_social]: https://drupal.org/project/fb_social
+[metatag]: https://drupal.org/project/metatag
