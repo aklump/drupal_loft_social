@@ -8,6 +8,10 @@
     margin-right: 10px;
     @include inline-block;
   }
+  iframe {
+    max-width: none;
+    width: auto;
+  }
 }
 .loft-social-links.title-prefix {
   margin-bottom: 0;

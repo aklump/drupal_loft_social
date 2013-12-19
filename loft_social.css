@@ -13,11 +13,15 @@
     *vertical-align: auto;
     zoom: 1;
     *display: inline; }
+  /* line 11, loft_social.scss */
+  .loft-social-links iframe {
+    max-width: none;
+    width: auto; }
 
-/* line 12, loft_social.scss */
+/* line 16, loft_social.scss */
 .loft-social-links.title-prefix {
   margin-bottom: 0; }
 
-/* line 15, loft_social.scss */
+/* line 19, loft_social.scss */
 .loft-social-links.title-suffix {
   margin-top: 0; }
