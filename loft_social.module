@@ -230,7 +230,7 @@ function loft_social_metatag_config_presave($config, $conf = NULL) {
       break;
 
     case 'global:frontpage':
-      $config->config['description']['value'] = empty($config->config['description']['value']) ? '[site:motto]' : $config->config['description']['value'];
+      $config->config['description']['value'] = empty($config->config['description']['value']) ? '[site:slogan]' : $config->config['description']['value'];
       $config->config['og:type']['value'] = empty($config->config['og:type']['value']) ? 'website' : $config->config['og:type']['value'];
       break;
   }  
