@@ -17,6 +17,7 @@ define('LOFT_SOCIAL_PLACEMENT', 0);
 define('LOFT_SOCIAL_BLOCK_COUNT', 0);
 define('LOFT_SOCIAL_BLOCK_COUNT_WEBSITE', 0);
 define('LOFT_SOCIAL_OG_IMAGE_STYLE', 'large');
+define('LOFT_SOCIAL_OG_IMAGE_MIN', '200x200');
 
 // Do not show on the following public pages.
 $pages = <<<EOD
@@ -100,6 +101,27 @@ function loft_social_form_shorten_admin_alter(&$form, $form_state, $form_id) {
 /**
  * Implements hook_form_alter().
  */
+function loft_social_form_metatag_config_edit_form_alter(&$form, $form_state, $form_id) {
+  
+  // Cycle through and lock fields
+  $groups = array('advanced', 'open-graph');
+  foreach ($groups as $group) {
+    $locked = _loft_social_metatag_locked_fields($form['instance']['#value']);
+    foreach ($locked as $field) {
+      $item = &$form['metatags'][$group];
+      if (array_key_exists($field, $item)) {
+        $item[$field]['value']['#disabled'] = TRUE;
+        $item[$field]['value']['#description'] = t('This field is locked and managed by <a href="!url">Loft Social Manager</a>.', array(
+          '!url' => url(LOFT_SOCIAL_URL_SETTINGS), 
+        ));
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
 function loft_social_form_fb_social_admin_settings_form_alter(&$form, $form_state, $form_id) {
 
   $form['fb_social_urls']['fb_social_urls_mode']['#default_value'] = 1;
@@ -158,9 +180,11 @@ function loft_social_form_fb_social_admin_settings_form_submit($form, &$form_sta
  * @return string
  */
 function loft_social_og_image_uri($published = TRUE) {
-  if (!$uri = variable_get('loft_social_og_image', NULL)) {
+  if (!($fid = variable_get('loft_social_og_image', NULL))
+    || !($file = file_load($fid))) {
     return '';
   }
+  $uri = $file->uri;
   $style = variable_get('loft_social_og_image_style', LOFT_SOCIAL_OG_IMAGE_STYLE);
   if (array_key_exists($style, image_styles())) {
     $url = image_style_url($style, $uri);
@@ -187,7 +211,36 @@ function loft_social_og_site_name() {
 }
 
 /**
+ * Return an array of metatag groups whose fiels are locked by this module
+ *
+ * @param  string $instance_id
+ *
+ * @return array
+ * - keys are the groups
+ * - values are the fields
+ */
+function _loft_social_metatag_locked_fields($instance_id = NULL) {
+  $fields = array(
+    'global' => array(
+      'canonical',
+      'og:url',
+    ),
+    'global:frontpage' => array(
+      'canonical',
+      'og:url',
+    ),
+  );
+  if ($instance_id !== NULL) {
+    return array_key_exists($instance_id, $fields) ? $fields[$instance_id] : array();
+  }
+
+  return $fields;
+}
+
+/**
  * Implements hook_metatag_config_presave().
+ *
+ * @see  _loft_social_metatag_locked_fields().
  */
 function loft_social_metatag_config_presave($config, $conf = NULL) {
   $changed = clone $config;
@@ -195,41 +248,49 @@ function loft_social_metatag_config_presave($config, $conf = NULL) {
   if ($conf === NULL) {
     global $conf;
   }
+
+  // These fields cannot be overridden and are totally controlled.
+  // Be sure to add to _loft_social_metatag_locked_fields() as well!!!
   switch ($config->instance) {
     case 'global':
       $config->config['canonical']['value'] = 'http://[current-page:url:brief]';
-      $config->config['shortlink']['value'] = 'http://[current-page:url:brief]';
       $config->config['og:url']['value'] = 'http://[current-page:url:brief]';
-      if ($url = loft_social_og_image_uri()) {
-        $config->config['og:image']['value'] = $url;
-      }
       break;
 
     case 'global:frontpage':
       $config->config['canonical']['value'] = $conf['fb_social_base_url'];
-      $config->config['shortlink']['value'] = $conf['fb_social_base_url'];
       $config->config['og:url']['value'] = $conf['fb_social_base_url'];
       break;
   }
 
   if ($config != $changed && user_access('administer meta tags')) {
-    drupal_set_message(t("<a href='!url'>%type metatags</a> have been overwritten by Facebook Social Loft Extras.", array(
-      '!url' => url('admin/config/search/metatags/config/' . $config->instance), 
+    drupal_set_message(t("One or more locked <a href='!url'>%type metatag(s)</a> have been overwritten by Facebook Social Loft Extras.", array(
+      '!url' => url(LOFT_SOCIAL_URL_OG_SETTINGS), 
       '%type' => metatag_config_instance_label($config->instance), 
     )), 'warning', FALSE);
   }
 
+  
+
+  // These fields will only be set if they are empty; they can be overridden
+  // by an admin.
   $changed = clone $config;
 
   switch ($config->instance) {
     case 'global':
+      $config->config['shortlink']['value'] = empty($config->config['shortlink']['value']) ? 'http://[current-page:url:brief]' : $config->config['shortlink']['value'];
       $config->config['og:type']['value'] = empty($config->config['og:type']['value']) ? 'article' : $config->config['og:type']['value'];
       $config->config['og:site_name']['value'] = empty($config->config['og:site_name']['value']) ? loft_social_og_site_name() : $config->config['og:site_name']['value'];
       $config->config['og:title']['value'] = empty($config->config['og:title']['value']) ? '[site:name]' : $config->config['og:title']['value'];
       $config->config['og:description']['value'] = empty($config->config['og:description']['value']) ? '[site:slogan]' : $config->config['og:description']['value'];
+      if ($url = loft_social_og_image_uri()) {
+        $config->config['image_src']['value'] = empty($config->config['image_src']['value']) ? $url : $config->config['image_src']['value'];
+        $config->config['og:image']['value'] = empty($config->config['og:image']['value']) ? $url : $config->config['og:image']['value'];
+      }      
       break;
 
     case 'global:frontpage':
+      $config->config['shortlink']['value'] = empty($config->config['shortlink']['value']) ? $conf['fb_social_base_url'] : $config->config['shortlink']['value'];
       $config->config['description']['value'] = empty($config->config['description']['value']) ? '[site:slogan]' : $config->config['description']['value'];
       $config->config['og:type']['value'] = empty($config->config['og:type']['value']) ? 'website' : $config->config['og:type']['value'];
       break;
@@ -238,7 +299,7 @@ function loft_social_metatag_config_presave($config, $conf = NULL) {
 
   if ($config != $changed && user_access('administer meta tags')) {
     drupal_set_message(t("Some default value(s) for <a href='!url'>%type metatags</a> have been provided by Facebook Social Loft Extras you may want <a href='!url'>to review</a>.", array(
-      '!url' => url('admin/config/search/metatags/config/' . $config->instance), 
+      '!url' => url(LOFT_SOCIAL_URL_OG_SETTINGS), 
       '%type' => metatag_config_instance_label($config->instance), 
     )), 'warning', FALSE);
   }
@@ -642,6 +703,13 @@ function loft_social_show_on_page() {
  * Implements hook_preprocess_page().
  */
 function loft_social_preprocess_page(&$vars) {
+  
+  // We shouldn't show on 40x pages
+  $headers = drupal_get_http_header();
+  if (isset($headers['status']) && strpos($headers['status'], '40') === 0) {
+    return;
+  }
+
   global $_loft_social_page_placement;
   if ($_loft_social_page_placement) {
     switch (variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT)) {

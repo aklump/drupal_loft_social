@@ -50,9 +50,6 @@ function loft_social_settings($form, &$form_state) {
     '#collapsed' => FALSE,
   );
 
-  $image_local = loft_social_og_image_uri(FALSE);
-  $image_published = loft_social_og_image_uri();
-  $collapsed = (bool) $image_local;
   $form['facebook']['og'] = array(
     '#type' => 'fieldset',
     '#title' => t('Open Graph'),
@@ -61,8 +58,27 @@ function loft_social_settings($form, &$form_state) {
       '!url2' => url(LOFT_SOCIAL_URL_OG_SETTINGS), 
     )), 
     '#collapsible' => TRUE,
-    '#collapsed' => $collapsed,
+    '#collapsed' => TRUE,
     '#weight' => 10, 
+  );
+
+  // og:image
+  $image_local = loft_social_og_image_uri(FALSE);
+  $image_published = loft_social_og_image_uri();
+  $collapsed = (bool) $image_local;
+
+
+  $form['facebook']['image'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Image'),
+    // '#description' => t('By uploading an image here, you will effectively lock all <a href="!url">global image metatags</a> fields rendering them unchangeable.', array(
+    //   '!url' => url(LOFT_SOCIAL_URL_OG_SETTINGS . '/global', array(
+    //       'query' => drupal_get_destination(), 
+    //   )), 
+    // )),
+    '#collapsible' => TRUE,
+    '#collapsed' => $collapsed,
+    '#weight' => 5, 
   );
 
   // Upload og:image
@@ -70,14 +86,19 @@ function loft_social_settings($form, &$form_state) {
 
   // Show the current image
   if ($image_local) {
-    $form['facebook']['og']['image_local'] = array(
+    $form['facebook']['image']['image_local'] = array(
       '#prefix' => t('<h3>Current default <code>og:image</code></h3><p>@path</p>', array('@path' => $image_published)), 
       '#theme' => 'image', 
       '#path' => $image_local, 
       '#title' => t('Default og:image'), 
     );
-    $form['facebook']['og']['image'] = array(
-      '#prefix' => t('<h3>What the World Sees</h3><p>If you do not see a second image, then the <code>og:image</code> metatag does not point to the image file.</p>'), 
+    // $form['facebook']['image']['delete_og_image'] = array(
+    //   '#type' => 'checkbox',
+    //   '#title' => t('Delete the current image.'),
+    //   '#default_value' => FALSE,
+    // );        
+    $form['facebook']['image']['image'] = array(
+      '#prefix' => t('<h3>What the World Sees</h3><p>If you the second image is missing or incorrect, then the <code>og:image</code> metatag does not point to the image file.</p>'), 
       '#theme' => 'image', 
       '#path' => $image_published, 
       '#title' => t('Default og:image'), 
@@ -85,16 +106,16 @@ function loft_social_settings($form, &$form_state) {
     );
   }
 
-  $form['facebook']['og']['loft_social_og_image_style'] = array(
+  $form['facebook']['image']['loft_social_og_image_style'] = array(
     '#type' => 'select',
     '#title' => t('Image style'),
     '#default_value' => variable_get('loft_social_og_image_style', LOFT_SOCIAL_OG_IMAGE_STYLE),
     '#options' => image_style_options(),
   );
 
-  $form['facebook']['og']['loft_social_og_image'] = array(
+  $form['facebook']['image']['loft_social_og_image'] = array(
     '#type' => 'file',
-    '#title' => $image_local ? t('Replace with a new image') : t('Select your global fallback iamge'),
+    '#title' => $image_local ? t('Replace with a new image') : t('Select your global fallback image'),
     '#description' => 'An image which should represent your object within the graph', 
     '#size' => 40,
   );  
@@ -295,9 +316,12 @@ function loft_social_settings($form, &$form_state) {
     );
   }  
 
+  $form = system_settings_form($form);
+  //$form['#submit'][] = 'loft_social_settings_submit';
   $form['#submit'][] = 'loft_social_form_fb_social_admin_settings_form_submit';
-
-  return system_settings_form($form);
+  
+  return $form;
+  
 }
 
 /**
@@ -310,38 +334,42 @@ function loft_social_settings_validate($form, &$form_state) {
   // An image URL which should represent your object within the graph. The
   // image must be at least 50px by 50px and have a maximum aspect ratio of
   // 3:1. We support PNG, JPEG and GIF formats.
+  $fid = NULL;
   if (($file = file_save_upload('loft_social_og_image', array(
     'file_validate_is_image' => array(),
-    'file_validate_image_resolution' => array(0, '50x50'),
+    'file_validate_image_resolution' => array(0, variable_get('loft_social_og_image_min', LOFT_SOCIAL_OG_IMAGE_MIN)),
   ))) === NULL) {
-    $uri = variable_get('loft_social_og_image', NULL);  
+    $fid = variable_get('loft_social_og_image', NULL);  
   }
   else {
     $dir = 'public://loft-social/og/';
     file_prepare_directory($dir, FILE_CREATE_DIRECTORY);
     $public = $dir . preg_replace('/.*(\.[^\.]+$)/', 'global\1', $file->filename);
+    $file->status = FILE_STATUS_PERMANENT;
     $file = file_move($file, $public, FILE_EXISTS_REPLACE);
-    $uri = $file->uri;
+    $fid = $file->fid;
+    image_path_flush($file->uri);
   }
 
-  form_set_value($form['facebook']['og']['loft_social_og_image'], $uri, $form_state);
+  if (empty($form_state['values']['delete_og_image']) && !$fid) {
+    form_set_error('loft_social_og_image', t('A default fallback image is required.'));
+  }
+
+  form_set_value($form['facebook']['image']['loft_social_og_image'], $fid, $form_state);
 }
 
-/**
- * Form submission handler for loft_social_settings().
- *
- * @see loft_social_settings()
- * @see loft_social_settings_validate()
- */
-function loft_social_settings_submit($form, &$form_state) {
-  //print '<pre>'; print __FILE__ . '/' . __FUNCTION__ . "():\n"; print_r($form_state['values']); print '</pre>'; die;
-
-  //Drupal 7 Multistep
-  //$form_state['rebuild'] = TRUE;
-  //Add carryover values here...
-  //$form_state['storage'] = array('key' => 'value');
-
-  //one of these needs to answer where this form goes
-  //$form_state['redirect'] = array('user/register', $query);
-  //$form_state['redirect'] = 'user/register'
-}
+// /**
+//  * Form submission handler for loft_social_settings().
+//  *
+//  * @see loft_social_settings()
+//  * @see loft_social_settings_validate()
+//  */
+// function loft_social_settings_submit($form, &$form_state) {
+//   if (!empty($form_state['values']['delete_og_image'])) {
+//     if (($file = file_load($form_state['values']['loft_social_og_image']))
+//       && file_delete($file)) {
+//       variable_del('loft_social_og_image');
+//       drupal_set_message(t("The default image has been deleted."), 'status', FALSE);
+//     }
+//   }
+// }
