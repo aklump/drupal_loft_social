@@ -1,7 +1,7 @@
 name = Loft Social Manager
 description = A helper module for social integrations.
 package = Custom
-version = 7.x-0.3-rc8
+version = 7.x-0.3-rc9
 core = 7.x
 
 dependencies[] = on_the_web
