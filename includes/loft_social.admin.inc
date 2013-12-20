@@ -122,7 +122,7 @@ function loft_social_settings($form, &$form_state) {
         )), 
         '!url3' => url('https://developers.facebook.com/tools/debug/og/object', array(
           'query' => array(
-            'q' => 'http://www.ovagraph.com', 
+            'q' => variable_get('fb_social_base_url', ''), 
           ),
           'attributes' => array('_target' => 'blank'),
         ))
