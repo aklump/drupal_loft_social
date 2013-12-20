@@ -108,6 +108,14 @@ function loft_social_form_metatag_config_edit_form_alter(&$form, $form_state, $f
   foreach ($groups as $group) {
     $locked = _loft_social_metatag_locked_fields($form['instance']['#value']);
     foreach ($locked as $field) {
+
+      // Special handling for image
+      if (in_array($field, array('og:image', 'image_src'))
+        && !loft_social_og_image_uri()) {
+        continue;
+      }
+
+
       $item = &$form['metatags'][$group];
       if (array_key_exists($field, $item)) {
         $item[$field]['value']['#disabled'] = TRUE;
@@ -195,7 +203,7 @@ function loft_social_og_image_uri($published = TRUE) {
   
   if ($published && ($base = variable_get('fb_social_base_url', ''))) {
     $parsed = parse_url($url);
-    $url = rtrim($base, '/') . $parsed['path'];
+    $url = rtrim($base, '/') . $parsed['path'] . '?' . $parsed['query'];
   }
 
   return $url;
@@ -224,6 +232,8 @@ function _loft_social_metatag_locked_fields($instance_id = NULL) {
     'global' => array(
       'canonical',
       'og:url',
+      'image_src',
+      'og:image'
     ),
     'global:frontpage' => array(
       'canonical',
@@ -249,12 +259,16 @@ function loft_social_metatag_config_presave($config, $conf = NULL) {
     global $conf;
   }
 
-  // These fields cannot be overridden and are totally controlled.
+  // These fields cannot be overridden and are totally contro
   // Be sure to add to _loft_social_metatag_locked_fields() as well!!!
   switch ($config->instance) {
     case 'global':
       $config->config['canonical']['value'] = 'http://[current-page:url:brief]';
       $config->config['og:url']['value'] = 'http://[current-page:url:brief]';
+      if ($url = loft_social_og_image_uri()) {
+        $config->config['image_src']['value'] = $url;
+        $config->config['og:image']['value'] = $url;
+      }
       break;
 
     case 'global:frontpage':
@@ -283,10 +297,6 @@ function loft_social_metatag_config_presave($config, $conf = NULL) {
       $config->config['og:site_name']['value'] = empty($config->config['og:site_name']['value']) ? loft_social_og_site_name() : $config->config['og:site_name']['value'];
       $config->config['og:title']['value'] = empty($config->config['og:title']['value']) ? '[site:name]' : $config->config['og:title']['value'];
       $config->config['og:description']['value'] = empty($config->config['og:description']['value']) ? '[site:slogan]' : $config->config['og:description']['value'];
-      if ($url = loft_social_og_image_uri()) {
-        $config->config['image_src']['value'] = empty($config->config['image_src']['value']) ? $url : $config->config['image_src']['value'];
-        $config->config['og:image']['value'] = empty($config->config['og:image']['value']) ? $url : $config->config['og:image']['value'];
-      }      
       break;
 
     case 'global:frontpage':

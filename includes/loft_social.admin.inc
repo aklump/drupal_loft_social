@@ -92,11 +92,11 @@ function loft_social_settings($form, &$form_state) {
       '#path' => $image_local, 
       '#title' => t('Default og:image'), 
     );
-    // $form['facebook']['image']['delete_og_image'] = array(
-    //   '#type' => 'checkbox',
-    //   '#title' => t('Delete the current image.'),
-    //   '#default_value' => FALSE,
-    // );        
+    $form['facebook']['image']['delete_og_image'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Delete the current image.'),
+      '#default_value' => FALSE,
+    );        
     $form['facebook']['image']['image'] = array(
       '#prefix' => t('<h3>What the World Sees</h3><p>If you the second image is missing or incorrect, then the <code>og:image</code> metatag does not point to the image file.</p>'), 
       '#theme' => 'image', 
@@ -317,7 +317,7 @@ function loft_social_settings($form, &$form_state) {
   }  
 
   $form = system_settings_form($form);
-  //$form['#submit'][] = 'loft_social_settings_submit';
+  $form['#submit'][] = 'loft_social_settings_submit';
   $form['#submit'][] = 'loft_social_form_fb_social_admin_settings_form_submit';
   
   return $form;
@@ -351,25 +351,25 @@ function loft_social_settings_validate($form, &$form_state) {
     image_path_flush($file->uri);
   }
 
-  if (empty($form_state['values']['delete_og_image']) && !$fid) {
-    form_set_error('loft_social_og_image', t('A default fallback image is required.'));
-  }
+  // if (empty($form_state['values']['delete_og_image']) && !$fid) {
+  //   form_set_error('loft_social_og_image', t('A default fallback image is required.'));
+  // }
 
   form_set_value($form['facebook']['image']['loft_social_og_image'], $fid, $form_state);
 }
 
-// /**
-//  * Form submission handler for loft_social_settings().
-//  *
-//  * @see loft_social_settings()
-//  * @see loft_social_settings_validate()
-//  */
-// function loft_social_settings_submit($form, &$form_state) {
-//   if (!empty($form_state['values']['delete_og_image'])) {
-//     if (($file = file_load($form_state['values']['loft_social_og_image']))
-//       && file_delete($file)) {
-//       variable_del('loft_social_og_image');
-//       drupal_set_message(t("The default image has been deleted."), 'status', FALSE);
-//     }
-//   }
-// }
+/**
+ * Form submission handler for loft_social_settings().
+ *
+ * @see loft_social_settings()
+ * @see loft_social_settings_validate()
+ */
+function loft_social_settings_submit($form, &$form_state) {
+  if (!empty($form_state['values']['delete_og_image'])) {
+    if (($file = file_load($form_state['values']['loft_social_og_image']))
+      && file_delete($file)) {
+      variable_del('loft_social_og_image');
+      drupal_set_message(t("The default image has been deleted."), 'status', FALSE);
+    }
+  }
+}
