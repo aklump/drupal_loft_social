@@ -50,6 +50,56 @@ function loft_social_settings($form, &$form_state) {
     '#collapsed' => FALSE,
   );
 
+  $image_local = loft_social_og_image_uri(FALSE);
+  $image_published = loft_social_og_image_uri();
+  $collapsed = (bool) $image_local;
+  $form['facebook']['og'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Open Graph'),
+    '#description' => t('Learn more about <a href="!url">Open Graph</a> on the web or manage your <a href="!url2">Open Graph metatags</a>.', array(
+      '!url' => url('http://ogp.me/'), 
+      '!url2' => url(LOFT_SOCIAL_URL_OG_SETTINGS), 
+    )), 
+    '#collapsible' => TRUE,
+    '#collapsed' => $collapsed,
+    '#weight' => 10, 
+  );
+
+  // Upload og:image
+  $form['#attributes'] = array('enctype' => "multipart/form-data");
+
+  // Show the current image
+  if ($image_local) {
+    $form['facebook']['og']['image_local'] = array(
+      '#prefix' => t('<h3>Current default <code>og:image</code></h3><p>@path</p>', array('@path' => $image_published)), 
+      '#theme' => 'image', 
+      '#path' => $image_local, 
+      '#title' => t('Default og:image'), 
+    );
+    $form['facebook']['og']['image'] = array(
+      '#prefix' => t('<h3>What the World Sees</h3><p>If you do not see a second image, then the <code>og:image</code> metatag does not point to the image file.</p>'), 
+      '#theme' => 'image', 
+      '#path' => $image_published, 
+      '#title' => t('Default og:image'), 
+      //'#suffix' => '<p>' . check_plain($image) . '</p>', 
+    );
+  }
+
+  $form['facebook']['og']['loft_social_og_image_style'] = array(
+    '#type' => 'select',
+    '#title' => t('Image style'),
+    '#default_value' => variable_get('loft_social_og_image_style', LOFT_SOCIAL_OG_IMAGE_STYLE),
+    '#options' => image_style_options(),
+  );
+
+  $form['facebook']['og']['loft_social_og_image'] = array(
+    '#type' => 'file',
+    '#title' => $image_local ? t('Replace with a new image') : t('Select your global fallback iamge'),
+    '#description' => 'An image which should represent your object within the graph', 
+    '#size' => 40,
+  );  
+
+
   if ($data = fb_social_get_presets_by_type('like')) {
     $options = array();
     foreach ($data as $value) {
@@ -63,25 +113,41 @@ function loft_social_settings($form, &$form_state) {
     );
 
     $form['facebook']['manage'] = array(
-      '#markup' => t('Manage your facebook <a href="!url2">master settings</a> and your <a href="!url">preset(s)</a>.', array (
+      '#markup' => t('<p>Manage your <a href="!url2">facebook settings</a> and your <a href="!url">preset(s)</a>. Review the <a target="_blank" href="!url3">Open Graph Object Debugger</a> for your homepage.</p>', array (
         '!url' => url(LOFT_SOCIAL_URL_FB_PRESETS, array(
           'query' => drupal_get_destination(), 
         )), 
         '!url2' => url(LOFT_SOCIAL_URL_FB_SETTINGS, array(
           'query' => drupal_get_destination(), 
         )), 
+        '!url3' => url('https://developers.facebook.com/tools/debug/og/object', array(
+          'query' => array(
+            'q' => 'http://www.ovagraph.com', 
+          ),
+          'attributes' => array('_target' => 'blank'),
+        ))
       )),
     );
   }
   else {
     $form['facebook']['manage'] = array(
-      '#markup' => t('<span class="error">Please <a href="!url">create</a> at least one Facebook like preset.</span>', array (
+      '#markup' => t('<p class="error">Please <a href="!url">create</a> at least one Facebook like preset.</p>', array (
         '!url' => url(LOFT_SOCIAL_URL_FB_PRESETS . '/add', array(
           'query' => drupal_get_destination(), 
         )), 
       )),
     );
   }
+
+  // if (1) {
+  //   $form['facebook']['og']['manage'] = array(
+  //     '#markup' => t('<p class="error"><strong>og:type:</strong> Please <a href="!url">choose</a> an Open Graph default type for your website.</p>', array (
+  //       '!url' => url(LOFT_SOCIAL_URL_OG_SETTINGS, array(
+  //         'query' => drupal_get_destination(), 
+  //       )), 
+  //     )),
+  //   );
+  // }
 
   $form['rendering'] = array(
     '#type' => 'fieldset',
@@ -221,13 +287,15 @@ function loft_social_settings($form, &$form_state) {
       '#title' => '<code>settings.php</code> Protected Values', 
       '#description' => t('Once you are satisfied with your configuration, please add this snippet to <code>settings.php</code> to protect your website.'),  
       '#default_value' => $snippet,
-      '#rows' => 5,
+      '#rows' => 10,
       '#attributes' => array(
         'readonly' => 'readonly', 
       ),
       '#resizable' => TRUE,
     );
   }  
+
+  $form['#submit'][] = 'loft_social_form_fb_social_admin_settings_form_submit';
 
   return system_settings_form($form);
 }
@@ -239,11 +307,24 @@ function loft_social_settings($form, &$form_state) {
  * @see loft_social_settings_submit()
  */
 function loft_social_settings_validate($form, &$form_state) {
-  $values = $form_state['values'];
+  // An image URL which should represent your object within the graph. The
+  // image must be at least 50px by 50px and have a maximum aspect ratio of
+  // 3:1. We support PNG, JPEG and GIF formats.
+  if (($file = file_save_upload('loft_social_og_image', array(
+    'file_validate_is_image' => array(),
+    'file_validate_image_resolution' => array(0, '50x50'),
+  ))) === NULL) {
+    $uri = variable_get('loft_social_og_image', NULL);  
+  }
+  else {
+    $dir = 'public://loft-social/og/';
+    file_prepare_directory($dir, FILE_CREATE_DIRECTORY);
+    $public = $dir . preg_replace('/.*(\.[^\.]+$)/', 'global\1', $file->filename);
+    $file = file_move($file, $public, FILE_EXISTS_REPLACE);
+    $uri = $file->uri;
+  }
 
-  #if ($values['name'] == '') {
-  #  form_set_error('', t('You must select a name for this group of settings.'));
-  #}
+  form_set_value($form['facebook']['og']['loft_social_og_image'], $uri, $form_state);
 }
 
 /**
@@ -253,6 +334,7 @@ function loft_social_settings_validate($form, &$form_state) {
  * @see loft_social_settings_validate()
  */
 function loft_social_settings_submit($form, &$form_state) {
+  //print '<pre>'; print __FILE__ . '/' . __FUNCTION__ . "():\n"; print_r($form_state['values']); print '</pre>'; die;
 
   //Drupal 7 Multistep
   //$form_state['rebuild'] = TRUE;

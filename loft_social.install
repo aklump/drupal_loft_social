@@ -34,7 +34,7 @@ function loft_social_uninstall() {
  */
 function loft_social_enable() {
   // Message about module settings
-  drupal_set_message(t('You must set your app ID and Base URL immediately at <a href="!url2">!url2</a>. You may also adjust settings for Loft Social Extras by visiting <a href="!url">!url</a>.', array(
+  drupal_set_message(t('You must set your app ID and Base URL immediately at <a href="!url2">!url2</a>. You may also adjust settings for Loft Social Manager by visiting <a href="!url">!url</a>.', array(
     '!url' => url(LOFT_SOCIAL_URL_SETTINGS),
     '!url2' => url(LOFT_SOCIAL_URL_FB_SETTINGS),
   )));

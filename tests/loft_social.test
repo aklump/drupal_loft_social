@@ -9,9 +9,9 @@
 class LoftSocialUnitTestCase extends DrupalUnitTestCase {
   public static function getInfo() {
     return array(
-      'name' => 'Loft Social Extras Unit tests',
-      'description' => 'Unit testing for the Loft Social Extras module.',
-      'group' => 'Loft Social Extras',
+      'name' => 'Loft Social Manager Unit tests',
+      'description' => 'Unit testing for the Loft Social Manager module.',
+      'group' => 'Loft Social Manager',
     );
   }
   public function setUp($modules = array()) {
@@ -30,10 +30,10 @@ class LoftSocialUnitTestCase extends DrupalUnitTestCase {
 class LoftSocialWebTestCase extends DrupalWebTestCase {
   public static function getInfo() {
     return array(
-      'name' => 'Loft Social Extras Integration tests',
-      'description' => 'Integration testing for the Loft Social Extras module.',
+      'name' => 'Loft Social Manager Integration tests',
+      'description' => 'Integration testing for the Loft Social Manager module.',
       //'group' => 'WebsiteName.com: loft_social',
-      'group' => 'Loft Social Extras',
+      'group' => 'Loft Social Manager',
     );
   }
   public function setUp($modules = array()) {

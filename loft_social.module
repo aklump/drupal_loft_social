@@ -12,9 +12,11 @@ define('LOFT_SOCIAL_URL_SETTINGS', 'admin/config/services/loft-social');
 define('LOFT_SOCIAL_URL_FB_SETTINGS', 'admin/structure/fbsocial');
 define('LOFT_SOCIAL_URL_FB_PRESETS', 'admin/structure/fbsocial/presets');
 define('LOFT_SOCIAL_URL_OTW_SETTINGS', 'admin/config/services/on_the_web');
+define('LOFT_SOCIAL_URL_OG_SETTINGS', 'admin/config/search/metatags/config');
 define('LOFT_SOCIAL_PLACEMENT', 0);
 define('LOFT_SOCIAL_BLOCK_COUNT', 0);
 define('LOFT_SOCIAL_BLOCK_COUNT_WEBSITE', 0);
+define('LOFT_SOCIAL_OG_IMAGE_STYLE', 'large');
 
 // Do not show on the following public pages.
 $pages = <<<EOD
@@ -44,7 +46,7 @@ function loft_social_menu() {
   $items = array();
 
   $items[LOFT_SOCIAL_URL_SETTINGS] = array(
-   'title' => 'Loft Social Extras',
+   'title' => 'Loft Social Manager',
    'description' => 'Administer module configuration settings',
    'page callback' => 'drupal_get_form',
    'page arguments' => array('loft_social_settings'),
@@ -144,9 +146,35 @@ function loft_social_form_fb_social_admin_settings_form_submit($form, &$form_sta
     $config->instance = $instance;
     metatag_config_save($config);
   }
+}
 
-  // @todo set og:url
+/**
+ * Return the url to the og:image default
+ *
+ * @param  boolean $published Do you wnat the published url or the url for this
+ * server?  This should be FALSE if you want to display the image, and TRUE if
+ * you're setting a metatag.    
+ *
+ * @return string
+ */
+function loft_social_og_image_uri($published = TRUE) {
+  if (!$uri = variable_get('loft_social_og_image', NULL)) {
+    return '';
+  }
+  $style = variable_get('loft_social_og_image_style', LOFT_SOCIAL_OG_IMAGE_STYLE);
+  if (array_key_exists($style, image_styles())) {
+    $url = image_style_url($style, $uri);
+  }
+  else {
+    $url = file_create_url($uri);
+  }
   
+  if ($published && ($base = variable_get('fb_social_base_url', ''))) {
+    $parsed = parse_url($url);
+    $url = rtrim($base, '/') . $parsed['path'];
+  }
+
+  return $url;
 }
 
 /**
@@ -162,16 +190,44 @@ function loft_social_metatag_config_presave($config, $conf = NULL) {
     case 'global':
       $config->config['canonical']['value'] = 'http://[current-page:url:brief]';
       $config->config['shortlink']['value'] = 'http://[current-page:url:brief]';
+      $config->config['og:url']['value'] = 'http://[current-page:url:brief]';
+      if ($url = loft_social_og_image_uri()) {
+        $config->config['og:image']['value'] = $url;
+      }
       break;
-    
-    default:
+
+    case 'global:frontpage':
       $config->config['canonical']['value'] = $conf['fb_social_base_url'];
       $config->config['shortlink']['value'] = $conf['fb_social_base_url'];
+      $config->config['og:url']['value'] = $conf['fb_social_base_url'];
       break;
   }
 
   if ($config != $changed && user_access('administer meta tags')) {
     drupal_set_message(t("<a href='!url'>%type metatags</a> have been overwritten by Facebook Social Loft Extras.", array(
+      '!url' => url('admin/config/search/metatags/config/' . $config->instance), 
+      '%type' => metatag_config_instance_label($config->instance), 
+    )), 'warning', FALSE);
+  }
+
+  $changed = clone $config;
+
+  switch ($config->instance) {
+    case 'global':
+      $config->config['og:type']['value'] = empty($config->config['og:type']['value']) ? 'article' : $config->config['og:type']['value'];
+      $config->config['og:site_name']['value'] = empty($config->config['og:site_name']['value']) ? '[site:name]' : $config->config['og:site_name']['value'];
+      $config->config['og:title']['value'] = empty($config->config['og:title']['value']) ? '[site:name]' : $config->config['og:title']['value'];
+      $config->config['og:description']['value'] = empty($config->config['og:description']['value']) ? '[site:slogan]' : $config->config['og:description']['value'];
+      break;
+
+    case 'global:frontpage':
+      $config->config['og:type']['value'] = empty($config->config['og:type']['value']) ? 'website' : $config->config['og:type']['value'];
+      break;
+  }  
+  
+
+  if ($config != $changed && user_access('administer meta tags')) {
+    drupal_set_message(t("Some default value(s) for <a href='!url'>%type metatags</a> have been provided by Facebook Social Loft Extras you may want <a href='!url'>to review</a>.", array(
       '!url' => url('admin/config/search/metatags/config/' . $config->instance), 
       '%type' => metatag_config_instance_label($config->instance), 
     )), 'warning', FALSE);

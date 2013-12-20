@@ -1,4 +1,4 @@
-name = Loft Social Extras
+name = Loft Social Manager
 description = A helper module for social integrations.
 package = Custom
 version = 7.x-0.3-rc3
@@ -7,6 +7,7 @@ core = 7.x
 dependencies[] = on_the_web
 dependencies[] = fb_social
 dependencies[] = metatag
+dependencies[] = metatag_opengraph
 dependencies[] = shorten
 
 files[] = tests/loft_social.test
