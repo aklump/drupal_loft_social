@@ -717,7 +717,6 @@ function loft_social_metatag_metatags_view_alter(&$output, $instance) {
 
     // do other tags? in the future...
   }
-  print '<pre>'; print __FILE__ . '/' . __FUNCTION__ . "():\n"; print_r($element); print '</pre>'; die;
 }
 
 /**
