@@ -16,7 +16,7 @@ define('LOFT_SOCIAL_URL_OG_SETTINGS', 'admin/config/search/metatags/config');
 define('LOFT_SOCIAL_PLACEMENT', 0);
 define('LOFT_SOCIAL_BLOCK_COUNT', 0);
 define('LOFT_SOCIAL_BLOCK_COUNT_WEBSITE', 0);
-define('LOFT_SOCIAL_OG_IMAGE_STYLE', 'large');
+define('LOFT_SOCIAL_OG_IMAGE_STYLE', 'loft_social_og_image');
 define('LOFT_SOCIAL_OG_IMAGE_MIN', '200x200');
 define('LOFT_SOCIAL_OG_IMAGE_CT_MAX', 3);
 
@@ -663,11 +663,11 @@ function loft_social_metatag_metatags_view_alter(&$output, $instance) {
   }
   $element = &$output['og:image']['#attached']['drupal_add_html_head'];
 
-  $urls = array();
+  $files = array();
   if (count($element)) {
     foreach ($element as $data) {
       if (!empty($data[0]['#value'])) {
-        $urls[] = $data[0]['#value'];
+        $files[] = array('uri' => $data[0]['#value']);
       }
     }
   }
@@ -675,18 +675,27 @@ function loft_social_metatag_metatags_view_alter(&$output, $instance) {
   $context = array(
     'path' => ($path = drupal_get_normal_path(current_path())), 
     'node' => menu_get_object('node', 1, $path), 
+    'style' => variable_get('loft_social_og_image_style', LOFT_SOCIAL_OG_IMAGE_STYLE), 
   );
-  drupal_alter('loft_social_page_images', $urls, $context);
-  
+  drupal_alter('loft_social_page_images', $files, $context);
+
   $items = array();
-  $urls = array_unique($urls);
   $element = array();
   $weight = 0;
 
   $tallies = array(
     'og:image' => array(0, variable_get('loft_social_og_image_ct_max', LOFT_SOCIAL_OG_IMAGE_CT_MAX)),
   );
-  foreach ($urls as $key => $url) {
+  foreach ($files as $key => $url) {
+
+    if (isset($url['uri'])) {
+      if ($context['style']) {
+        $url = image_style_url($context['style'], $url['uri']);
+      }
+      else {
+        $url = file_create_url($url['uri']);  
+      }
+    }
 
     // og:image
     list($total, $max) = $tallies['og:image'];
@@ -708,6 +717,7 @@ function loft_social_metatag_metatags_view_alter(&$output, $instance) {
 
     // do other tags? in the future...
   }
+  print '<pre>'; print __FILE__ . '/' . __FUNCTION__ . "():\n"; print_r($element); print '</pre>'; die;
 }
 
 /**
@@ -923,3 +933,40 @@ function loft_social_fb_social_default_presets() {
   
   return $export;
 }
+
+/**
+ * Provide module-based image styles for reuse throughout Drupal.
+ *
+ * This hook allows your module to provide image styles. This may be useful if
+ * you require images to fit within exact dimensions. Note that you should
+ * attempt to re-use the default styles provided by Image module whenever
+ * possible, rather than creating image styles that are specific to your module.
+ * Image provides the styles "thumbnail", "medium", and "large".
+ *
+ * You may use this hook to more easily manage your site's changes by moving
+ * existing image styles from the database to a custom module. Note however that
+ * moving image styles to code instead storing them in the database has a
+ * negligible effect on performance, since custom image styles are loaded
+ * from the database all at once. Even if all styles are pulled from modules,
+ * Image module will still perform the same queries to check the database for
+ * any custom styles.
+ *
+ * @return
+ *   An array of image styles, keyed by the style name.
+ * @see image_image_default_styles()
+ */
+function loft_social_image_default_styles() {
+  $styles = array();
+
+  $styles['loft_social_og_image'] = array(
+    'effects' => array(
+      array(
+        'name' => 'image_scale',
+        'data' => array('width' => 200, 'height' => 200, 'upscale' => 0),
+        'weight' => 0,
+      ),
+    ),
+  );
+
+  return $styles;
+} 

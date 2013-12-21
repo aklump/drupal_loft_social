@@ -49,13 +49,14 @@ function hook_loft_social_show_on_page_alter(&$context) {
 /**
  * Implements hook_loft_social_page_images_alter().
  *
- * @param  array &$urls An array of absolute urls to one or more images for
- * for this page.  These images will be added to the page as multiple og:image
- * and so forth as appropriate.
+ * @param  array &$files An array of image file arrays with at least 'uri' key of
+ * images for for this page.  These images will be added to the page as multiple
+ * og:image and so forth as appropriate.
  * @param  array $context
  * - path: The unaliased path
  * - node: If a node is associated with this page; same as menu_get_object()
+ * - style: An image style to be applied to all uris if possible or FALSE
  */
-function hook_loft_social_page_images_alter(&$urls, $context) {
-  
+function hook_loft_social_page_images_alter(&$files, $context) image file {
+  // @todo
 }
