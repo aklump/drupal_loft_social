@@ -686,16 +686,21 @@ function loft_social_metatag_metatags_view_alter(&$output, $instance) {
   $tallies = array(
     'og:image' => array(0, variable_get('loft_social_og_image_ct_max', LOFT_SOCIAL_OG_IMAGE_CT_MAX)),
   );
+  $urls = array();
   foreach ($files as $key => $url) {
-
     if (isset($url['uri'])) {
       if ($context['style'] && file_uri_scheme($url['uri']) === 'public') {
-        $url = image_style_url($context['style'], $url['uri']);
+        $urls[] = image_style_url($context['style'], $url['uri']);
       }
       else {
-        $url = file_create_url($url['uri']);  
+        $urls[] = file_create_url($url['uri']);  
       }
     }
+  }
+
+  $urls = array_unique($urls);
+
+  foreach ($urls as $url) {
 
     // og:image
     list($total, $max) = $tallies['og:image'];
