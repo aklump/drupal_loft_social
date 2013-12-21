@@ -45,3 +45,17 @@ function hook_loft_social_show_on_page_alter(&$context) {
     $context['access'] = FALSE;
   }
 }
+
+/**
+ * Implements hook_loft_social_page_images_alter().
+ *
+ * @param  array &$urls An array of absolute urls to one or more images for
+ * for this page.  These images will be added to the page as multiple og:image
+ * and so forth as appropriate.
+ * @param  array $context
+ * - path: The unaliased path
+ * - node: If a node is associated with this page; same as menu_get_object()
+ */
+function hook_loft_social_page_images_alter(&$urls, $context) {
+  
+}

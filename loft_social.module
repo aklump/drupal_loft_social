@@ -651,6 +651,53 @@ function loft_social_init() {
 }
 
 /**
+ * Implements hook_social_metatag_metatags_view_alter().
+ */
+function loft_social_metatag_metatags_view_alter(&$output, $instance) {
+
+  // We are going to go through and allow other modules to increase the
+  // number of of:image tags from 1 to N using hook_loft_social_page_images_alter().
+  if (empty($output['og:image']['#attached']['drupal_add_html_head'])) {
+    $output['og:image']['#attached']['drupal_add_html_head'] = array();
+  }
+  $element = &$output['og:image']['#attached']['drupal_add_html_head'];
+
+  $urls = array();
+  if (count($element)) {
+    foreach ($element as $data) {
+      if (!empty($data[0]['#value'])) {
+        $urls[] = $data[0]['#value'];
+      }
+    }
+  }
+
+  $context = array(
+    'path' => ($path = drupal_get_normal_path(current_path())), 
+    'node' => menu_get_object('node', 1, $path), 
+  );
+  drupal_alter('loft_social_page_images', $urls, $context);
+  
+  $items = array();
+  $urls = array_unique($urls);
+  $element = array();
+  $weight = 0;
+  foreach ($urls as $key => $url) {
+    $id = 'metatag_og:image:' . $key;
+    $element[] = array(
+      array(
+        '#theme' => 'metatag_opengraph', 
+        '#tag' => 'meta', 
+        '#id' => $id, 
+        '#name' => 'og:image', 
+        '#value' => $url, 
+        '#weight' => $weight++, 
+      ),
+      $id,
+    );
+  }
+}
+
+/**
  * Return if the current page should have links applied
  *
  * Caller should also check loft_social_placement var
