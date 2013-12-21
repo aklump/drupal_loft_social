@@ -706,7 +706,7 @@ function loft_social_metatag_metatags_view_alter(&$output, $instance) {
     list($total, $max) = $tallies['og:image'];
     if ($total < $max) {
       $tallies['og:image'][0]++;
-      $id = 'metatag_og:image:' . $key;
+      $id = 'metatag_og:image:' . $total;
       $element[] = array(
         array(
           '#theme' => 'metatag_opengraph', 
