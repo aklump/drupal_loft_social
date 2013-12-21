@@ -18,6 +18,7 @@ define('LOFT_SOCIAL_BLOCK_COUNT', 0);
 define('LOFT_SOCIAL_BLOCK_COUNT_WEBSITE', 0);
 define('LOFT_SOCIAL_OG_IMAGE_STYLE', 'large');
 define('LOFT_SOCIAL_OG_IMAGE_MIN', '200x200');
+define('LOFT_SOCIAL_OG_IMAGE_CT_MAX', 3);
 
 // Do not show on the following public pages.
 $pages = <<<EOD
@@ -681,19 +682,31 @@ function loft_social_metatag_metatags_view_alter(&$output, $instance) {
   $urls = array_unique($urls);
   $element = array();
   $weight = 0;
+
+  $tallies = array(
+    'og:image' => array(0, variable_get('loft_social_og_image_ct_max', LOFT_SOCIAL_OG_IMAGE_CT_MAX)),
+  );
   foreach ($urls as $key => $url) {
-    $id = 'metatag_og:image:' . $key;
-    $element[] = array(
-      array(
-        '#theme' => 'metatag_opengraph', 
-        '#tag' => 'meta', 
-        '#id' => $id, 
-        '#name' => 'og:image', 
-        '#value' => $url, 
-        '#weight' => $weight++, 
-      ),
-      $id,
-    );
+
+    // og:image
+    list($total, $max) = $tallies['og:image'];
+    if ($total < $max) {
+      $tallies['og:image'][0]++;
+      $id = 'metatag_og:image:' . $key;
+      $element[] = array(
+        array(
+          '#theme' => 'metatag_opengraph', 
+          '#tag' => 'meta', 
+          '#id' => $id, 
+          '#name' => 'og:image', 
+          '#value' => $url, 
+          '#weight' => $weight++, 
+        ),
+        $id,
+      );
+    }
+
+    // do other tags? in the future...
   }
 }
 
