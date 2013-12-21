@@ -689,7 +689,7 @@ function loft_social_metatag_metatags_view_alter(&$output, $instance) {
   foreach ($files as $key => $url) {
 
     if (isset($url['uri'])) {
-      if ($context['style']) {
+      if ($context['style'] && file_uri_scheme($url['uri']) === 'public') {
         $url = image_style_url($context['style'], $url['uri']);
       }
       else {
@@ -957,11 +957,20 @@ function loft_social_fb_social_default_presets() {
 function loft_social_image_default_styles() {
   $styles = array();
 
-  $styles['loft_social_og_image'] = array(
+  $styles['loft_social_og_image_200x'] = array(
     'effects' => array(
       array(
         'name' => 'image_scale',
         'data' => array('width' => 200, 'height' => 200, 'upscale' => 0),
+        'weight' => 0,
+      ),
+    ),
+  );
+  $styles['loft_social_og_image_400x'] = array(
+    'effects' => array(
+      array(
+        'name' => 'image_scale',
+        'data' => array('width' => 400, 'height' => 400, 'upscale' => 0),
         'weight' => 0,
       ),
     ),
