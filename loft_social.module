@@ -87,6 +87,20 @@ function loft_social_form_ctools_export_ui_edit_item_form_alter(&$form, $form_st
     && $id === variable_get('loft_social_fb_preset_like', '')) {
     $form['fb_social_settings_like']['settings_like']['#collapsed'] = TRUE;
   }
+
+  if (isset($form['fb_social_settings_activityfeed'])) {
+    $url = &$form['fb_social_settings_activityfeed']['fb_attrs_activityfeed']['site'];
+    if (!$url['#default_value']) {
+      $url['#default_value'] = loft_social_get_website();
+    }
+  }
+
+  if (isset($form['fb_social_settings_recommendations'])) {
+    $url = &$form['fb_social_settings_recommendations']['fb_attrs_recommendations']['site'];
+    if (!$url['#default_value']) {
+      $url['#default_value'] = loft_social_get_website();
+    }
+  }
 }
 
 /**
@@ -179,6 +193,15 @@ function loft_social_form_fb_social_admin_settings_form_submit($form, &$form_sta
 }
 
 /**
+ * Return the base url as set by the fb_social module
+ *
+ * @return [type] [description]
+ */
+function loft_social_get_website() {
+  return variable_get('fb_social_base_url', '');
+}
+
+/**
  * Return the url to the og:image default
  *
  * @param  boolean $published Do you wnat the published url or the url for this
@@ -201,7 +224,7 @@ function loft_social_og_image_uri($published = TRUE) {
     $url = file_create_url($uri);
   }
   
-  if ($published && ($base = variable_get('fb_social_base_url', ''))) {
+  if ($published && ($base = loft_social_get_website())) {
     $parsed = parse_url($url);
     $url = rtrim($base, '/') . $parsed['path'] . '?' . $parsed['query'];
   }
@@ -210,7 +233,7 @@ function loft_social_og_image_uri($published = TRUE) {
 }
 
 function loft_social_og_site_name() {
-  if (!($url = variable_get('fb_social_base_url', ''))) {
+  if (!($url = loft_social_get_website())) {
     return variable_get('site_name', '');
   }
   $parsed = parse_url($url);
@@ -585,7 +608,7 @@ function loft_social_block_view($delta = '') {
       break;
 
     case 'website':
-      $url = variable_get('fb_social_base_url', '');
+      $url = loft_social_get_website();
       $block['content'] = _loft_social_links_array($url);
       break;
   }

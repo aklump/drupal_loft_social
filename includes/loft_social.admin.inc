@@ -143,7 +143,7 @@ function loft_social_settings($form, &$form_state) {
         )), 
         '!url3' => url('https://developers.facebook.com/tools/debug/og/object', array(
           'query' => array(
-            'q' => variable_get('fb_social_base_url', ''), 
+            'q' => loft_social_get_website(), 
           ),
           'attributes' => array('_target' => 'blank'),
         ))
