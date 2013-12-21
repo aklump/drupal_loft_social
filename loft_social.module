@@ -256,7 +256,8 @@ function _loft_social_metatag_locked_fields($instance_id = NULL) {
       'canonical',
       'og:url',
       'image_src',
-      'og:image'
+      'og:image',
+      'shortlink',
     ),
     'global:frontpage' => array(
       'canonical',
@@ -286,17 +287,19 @@ function loft_social_metatag_config_presave($config, $conf = NULL) {
   // Be sure to add to _loft_social_metatag_locked_fields() as well!!!
   switch ($config->instance) {
     case 'global':
-      $config->config['canonical']['value'] = 'http://[current-page:url:brief]';
-      $config->config['og:url']['value'] = 'http://[current-page:url:brief]';
+      $config->config['canonical']['value']   = 'http://[current-page:url:brief]';
+      $config->config['og:url']['value']      = 'http://[current-page:url:brief]';
+      $config->config['shortlink']['value']   = 'http://[current-page:url:unaliased:brief]';
       if ($url = loft_social_og_image_uri()) {
         $config->config['image_src']['value'] = $url;
-        $config->config['og:image']['value'] = $url;
+        $config->config['og:image']['value']  = $url;
       }
       break;
 
     case 'global:frontpage':
       $config->config['canonical']['value'] = $conf['fb_social_base_url'];
-      $config->config['og:url']['value'] = $conf['fb_social_base_url'];
+      $config->config['og:url']['value']    = $conf['fb_social_base_url'];
+      $config->config['shortlink']['value'] = $conf['fb_social_base_url'];
       break;
   }
 
@@ -315,7 +318,6 @@ function loft_social_metatag_config_presave($config, $conf = NULL) {
 
   switch ($config->instance) {
     case 'global':
-      $config->config['shortlink']['value'] = empty($config->config['shortlink']['value']) ? 'http://[current-page:url:brief]' : $config->config['shortlink']['value'];
       $config->config['og:type']['value'] = empty($config->config['og:type']['value']) ? 'article' : $config->config['og:type']['value'];
       $config->config['og:site_name']['value'] = empty($config->config['og:site_name']['value']) ? loft_social_og_site_name() : $config->config['og:site_name']['value'];
       $config->config['og:title']['value'] = empty($config->config['og:title']['value']) ? '[site:name]' : $config->config['og:title']['value'];
@@ -323,7 +325,6 @@ function loft_social_metatag_config_presave($config, $conf = NULL) {
       break;
 
     case 'global:frontpage':
-      $config->config['shortlink']['value'] = empty($config->config['shortlink']['value']) ? $conf['fb_social_base_url'] : $config->config['shortlink']['value'];
       $config->config['description']['value'] = empty($config->config['description']['value']) ? '[site:slogan]' : $config->config['description']['value'];
       $config->config['og:type']['value'] = empty($config->config['og:type']['value']) ? 'website' : $config->config['og:type']['value'];
       break;
