@@ -60,3 +60,27 @@ function hook_loft_social_show_on_page_alter(&$context) {
 function hook_loft_social_page_images_alter(&$files, $context) image file {
   // @todo
 }
+
+
+/**
+ * Alter metatags before being cached.
+ *
+ * This hook is invoked prior to the meta tags for a given page are cached.  It 
+ * differs from hook_metatag_metatags_view_alter in that it includes the path
+ * and the node if available so you have more context.
+ *
+ * @param  array &$files An array of image file arrays with at least 'uri' key of
+ * images for for this page.  These images will be added to the page as multiple
+ * og:image and so forth as appropriate.
+ * @param  array $context
+ * - path: The unaliased path
+ * - node: If a node is associated with this page; same as menu_get_object()
+ * - style: An image style to be applied to all uris if possible or FALSE
+ *
+ * @see hook_metatag_metatags_view_alter().
+ */
+function hook_loft_social_metatags_alter(&$output, $context) {
+  if (isset($output['description']['#attached']['drupal_add_html_head'][0][0]['#value'])) {
+    $output['description']['#attached']['drupal_add_html_head'][0][0]['#value'] = 'O rly?';
+  }
+}

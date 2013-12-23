@@ -92,14 +92,14 @@ function loft_social_form_ctools_export_ui_edit_item_form_alter(&$form, $form_st
   if (isset($form['fb_social_settings_activityfeed'])) {
     $url = &$form['fb_social_settings_activityfeed']['fb_attrs_activityfeed']['site'];
     if (!$url['#default_value']) {
-      $url['#default_value'] = loft_social_get_website();
+      $url['#default_value'] = loft_social_base_url();
     }
   }
 
   if (isset($form['fb_social_settings_recommendations'])) {
     $url = &$form['fb_social_settings_recommendations']['fb_attrs_recommendations']['site'];
     if (!$url['#default_value']) {
-      $url['#default_value'] = loft_social_get_website();
+      $url['#default_value'] = loft_social_base_url();
     }
   }
 }
@@ -196,10 +196,20 @@ function loft_social_form_fb_social_admin_settings_form_submit($form, &$form_sta
 /**
  * Return the base url as set by the fb_social module
  *
- * @return [type] [description]
+ * @param  string $part A value to pass to parse_url as 2nd param.
+ *
+ * @return string
+ *
+ * @see  parse_url().
+ *
+ * @tested
  */
-function loft_social_get_website() {
-  return variable_get('fb_social_base_url', '');
+function loft_social_base_url($part = NULL) {
+  $url = rtrim(variable_get('fb_social_base_url', ''), '/');
+  if ($part !== NULL) {
+    return parse_url($url, $part);
+  }
+  return $url;
 }
 
 /**
@@ -225,7 +235,7 @@ function loft_social_og_image_uri($published = TRUE) {
     $url = file_create_url($uri);
   }
   
-  if ($published && ($base = loft_social_get_website())) {
+  if ($published && ($base = loft_social_base_url())) {
     $parsed = parse_url($url);
     $url = rtrim($base, '/') . $parsed['path'] . '?' . $parsed['query'];
   }
@@ -233,13 +243,20 @@ function loft_social_og_image_uri($published = TRUE) {
   return $url;
 }
 
+/**
+ * Return the og site name
+ *
+ * @return string
+ *
+ * @tested
+ */
 function loft_social_og_site_name() {
-  if (!($url = loft_social_get_website())) {
-    return variable_get('site_name', '');
+  if (!($url = loft_social_base_url())) {
+    $url = variable_get('site_name', '');
   }
   $parsed = parse_url($url);
 
-  return $parsed['host'];
+  return isset($parsed['host']) ? rtrim($parsed['host'], '/') : $url;
 }
 
 /**
@@ -341,27 +358,47 @@ function loft_social_metatag_config_presave($config, $conf = NULL) {
 }
 
 /**
- * Return the url for the current page
+ * Return a social safe url
  *
- * @param  string $url
- *   (Optional) If omitted the current page will be used.
+ * 1. If absolute and base url matches our social base url then make sure it's
+ * http
+ * 2. Otherwise if absolute pass through
+ * 3. If path is provided then return an absolute url using our base url that
+ * is always http
+ * 4. If no path then use current path and do as in #3
+ *
+ * @param  string $path e.g., node/123 or empty() for current
  *
  * @return string
- *   A url to use in social service links to current page. HTTPS will always be
- *   stripped to HTTP.
  *
+ * @tested
  */
-function loft_social_get_page_url($url = '') {
-  if (empty($url)) {
-    $current = current_path();
-    if (!module_exists('fb_social') ||
-      !($url = fb_social_url($current))) {
-      $url = url($current, array('absolute' => TRUE));
-    }
+function loft_social_url($path = NULL) {
+
+  if (empty($path)) {
+    $path = current_path();
+  }
+  
+  // Get the path of the current page if not provided
+  if (1 || !module_exists('fb_social') ||
+    !($url = fb_social_url($path))) {
+    $base = loft_social_base_url();
+    $path = drupal_get_normal_path($path);
+    $url = url($path, array(
+      'absolute' => TRUE,
+
+      // This means it's already an alias so don't convert it. Even though
+      // it's not really an alias, we do this so it doens't become one.
+      'alias' => TRUE,
+
+      'base_url' => $base,
+    ));
   }
 
   // Make sure this is http, as https is considered a different url
-  $url = str_replace('https://', 'http://', (string) $url);
+  if (loft_social_base_url(PHP_URL_HOST) == parse_url($url, PHP_URL_HOST)) {
+    $url = str_replace('https://', 'http://', (string) $url);  
+  }
 
   return $url;
 }
@@ -375,7 +412,7 @@ function loft_social_get_page_url($url = '') {
  * @return  array A renderable array.
  */
 function loft_social_fb_like_button($url = NULL) {
-  $url = loft_social_get_page_url($url);
+  $url = loft_social_url($url);
   $build = array();
 
   // Alert admins to create one fb like preset...
@@ -452,7 +489,7 @@ function loft_social_tweet_button($url = NULL) {
   }
   
   $http_protocol  = $is_https ? 'https' : 'http';  
-  $url            = loft_social_get_page_url($url);
+  $url            = loft_social_url($url);
   $tiny           = shorten_url($url);
 
   // Gleen the hero image of the page
@@ -610,7 +647,7 @@ function loft_social_block_view($delta = '') {
       break;
 
     case 'website':
-      $url = loft_social_get_website();
+      $url = loft_social_base_url();
       $block['content'] = _loft_social_links_array($url);
       break;
   }
@@ -656,6 +693,13 @@ function loft_social_init() {
  */
 function loft_social_metatag_metatags_view_alter(&$output, $instance) {
 
+  $context = array(
+    'path' => ($path = drupal_get_normal_path(current_path())), 
+    'node' => menu_get_object('node', 1, $path), 
+    'instance' => $instance, 
+    'style' => variable_get('loft_social_og_image_style', LOFT_SOCIAL_OG_IMAGE_STYLE), 
+  );  
+
   // We are going to go through and allow other modules to increase the
   // number of of:image tags from 1 to N using hook_loft_social_page_images_alter().
   if (empty($output['og:image']['#attached']['drupal_add_html_head'])) {
@@ -672,11 +716,6 @@ function loft_social_metatag_metatags_view_alter(&$output, $instance) {
     }
   }
 
-  $context = array(
-    'path' => ($path = drupal_get_normal_path(current_path())), 
-    'node' => menu_get_object('node', 1, $path), 
-    'style' => variable_get('loft_social_og_image_style', LOFT_SOCIAL_OG_IMAGE_STYLE), 
-  );
   drupal_alter('loft_social_page_images', $files, $context);
 
   $items = array();
@@ -722,6 +761,9 @@ function loft_social_metatag_metatags_view_alter(&$output, $instance) {
 
     // do other tags? in the future...
   }
+
+  // Now send them off for other modifications using our context
+  drupal_alter('loft_social_metatags', $output, $context);
 }
 
 /**
@@ -982,4 +1024,4 @@ function loft_social_image_default_styles() {
   );
 
   return $styles;
-} 
+}

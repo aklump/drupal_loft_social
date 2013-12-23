@@ -46,19 +46,43 @@ class LoftSocialWebTestCase extends DrupalWebTestCase {
     parent::setUp($modules);
 
     // Define our social variables
-    variable_set('on_the_web_twitter_page',   "http://www.twitter.com/clarkkent");
-    variable_set('on_the_web_facebook_page',  "http://www.facebook.com/Clark.Kent");
-    variable_set('on_the_web_pinterest_page', "https://pinterest.com/clarkkent/");
-    variable_set('on_the_web_google_page',    "https://plus.google.com/5551212/posts");
-    variable_set('on_the_web_youtube_page',   "http://www.youtube.com/user/ClarkKent");    
+    variable_set('on_the_web_twitter_page',   'http://www.twitter.com/clarkkent');
+    variable_set('on_the_web_facebook_page',  'http://www.facebook.com/Clark.Kent');
+    variable_set('on_the_web_pinterest_page', 'https://pinterest.com/clarkkent/');
+    variable_set('on_the_web_google_page',    'https://plus.google.com/5551212/posts');
+    variable_set('on_the_web_youtube_page',   'http://www.youtube.com/user/ClarkKent');    
+    variable_set('fb_social_base_url',        'http://www.intheloftstudios.com');
   }
 
   public function testGroup1() {
+    $this->subtest__loft_social_url();
+    $this->subtest__loft_social_base_url();
+    $this->subtest__loft_social_og_site_name();
     $this->subtest__loft_social_get_name();
-    $this->subtest__loft_social_get_page_url();
     $this->subtest__loft_social_post_render_meta_tags();
   }
 
+  public function subtest__loft_social_base_url() {
+    $this->assertIdentical('http://www.intheloftstudios.com', loft_social_base_url(), 'Base URL returns correctly with no args');
+    $this->assertIdentical('www.intheloftstudios.com', loft_social_base_url(PHP_URL_HOST), 'Base URL returns host correctly with PHP_URL_HOST');
+  }
+
+  public function subtest__loft_social_og_site_name() {
+    variable_del('fb_social_base_url');
+
+    variable_set('site_name', 'http://www.apple.com/');
+    $result = loft_social_og_site_name();
+    $this->assertIdentical('www.apple.com', $result, 'og site name comes from site_name when no base url.');
+
+    variable_set('site_name', 'Global Oneness Project');
+    $result = loft_social_og_site_name();
+    $this->assertIdentical('Global Oneness Project', $result, 'og site name comes from site_name when no base url.');
+
+    variable_set('fb_social_base_url', 'http://www.intheloftstudios.com');
+    $this->assertIdentical('www.intheloftstudios.com', loft_social_og_site_name(), 'og site name comes from fb_social_base_url when var is set.');
+
+
+  }
 
   // Add your unit & integration tests here...
   public function subtest__loft_social_get_name() {
@@ -80,11 +104,6 @@ class LoftSocialWebTestCase extends DrupalWebTestCase {
     $this->assertIdentical('ClarkKent', $result, "Assert youtube name works.", $_control_group);
   }
 
-  public function subtest__loft_social_get_page_url() {
-    $result = loft_social_get_page_url('https://www.intheloftstudios.com');
-    $this->assertIdentical('http://www.intheloftstudios.com', $result, 'Assert s is stripped from http.');
-  }
-
   public function subtest__loft_social_post_render_meta_tags() {
     $subject = '<h3>My markup</h3>';
     $element = array(
@@ -101,5 +120,35 @@ class LoftSocialWebTestCase extends DrupalWebTestCase {
 
     $return = drupal_add_html_head();
     $this->assertTrue(array_key_exists('twitter_twitter:widgets:csp_on', $return), 'Assert the meta tag has been added to drupal_add_html_head().');
-  }  
+  }
+
+  public function subtest__loft_social_url() {
+    $result = loft_social_url('https://www.intheloftstudios.com');
+    $this->assertIdentical('http://www.intheloftstudios.com', $result, 'Assert s is stripped from http.');
+
+    $result = loft_social_url('https://www.google.com');
+    $this->assertIdentical('https://www.google.com', $result, 'Assert not stripped unless base url matches ours.');
+
+    $result = loft_social_url('http://www.intheloftstudios.com');
+    $this->assertIdentical('http://www.intheloftstudios.com', $result, 'Passes http through.');
+
+    $control = 'http://www.intheloftstudios.com/batch';
+    $result = loft_social_url();
+    $this->assertIdentical($control, $result, 'No args returns the base url plus the $q'); 
+
+    $subject = 'portfolio';
+    $control = variable_get('fb_social_base_url', '') . '/portfolio';
+    $this->assertIdentical($control, loft_social_url($subject), 'url works on non-node path');
+
+    $node = $this->drupalCreateNode();
+    $subject = 'node/' . $node->nid;
+    $control = variable_get('fb_social_base_url', '') . '/node/' . $node->nid;
+    $this->assertIdentical($control, loft_social_url($subject), 'url works on unaliased node path');
+
+    $node->path['alias'] = 'portfolio/project';
+    node_save($node);
+    //$control = variable_get('fb_social_base_url', '') . '/portfolio/project';
+    $result = loft_social_url($subject);
+    $this->assertIdentical($control, $result, 'url works on aliased node path');    
+  }
 }
