@@ -147,9 +147,14 @@ function loft_social_form_metatag_config_edit_form_alter(&$form, $form_state, $f
  */
 function loft_social_form_fb_social_admin_settings_form_alter(&$form, $form_state, $form_id) {
 
-  $form['fb_social_urls']['fb_social_urls_mode']['#default_value'] = 1;
-  $form['fb_social_urls']['fb_social_urls_mode']['#description'] = t("<em>Options have been removed by Facebook Social Loft Extras.</em>");
-  $form['fb_social_urls']['fb_social_urls_mode']['#options'] = array_intersect_key($form['fb_social_urls']['fb_social_urls_mode']['#options'], array(1 => 1));
+  // If we have not yet set this variable then we want to force the unaliased
+  // version, also if it is set and not equal to 1 then we need to show the
+  // other options or it gets confusing.
+  if (variable_get('fb_social_urls_mode', 1) == 1)  {
+    $form['fb_social_urls']['fb_social_urls_mode']['#default_value'] = 1;
+    $form['fb_social_urls']['fb_social_urls_mode']['#description'] = t("<em>Options have been removed by Facebook Social Loft Extras.</em>");
+    $form['fb_social_urls']['fb_social_urls_mode']['#options'] = array_intersect_key($form['fb_social_urls']['fb_social_urls_mode']['#options'], array(1 => 1));
+  }
   
   $form['#validate'][] = 'loft_social_form_fb_social_admin_settings_form_validate'; 
   $form['#submit'][] = 'loft_social_form_fb_social_admin_settings_form_submit'; 
@@ -379,7 +384,7 @@ function loft_social_url($path = NULL) {
     $path = current_path();
   }
   
-  // Get the path of the current page if not provided
+  // Get the unaliased path of the current page if not provided
   if (!module_exists('fb_social') ||
     !($url = fb_social_url($path))) {
     $base = loft_social_base_url();
