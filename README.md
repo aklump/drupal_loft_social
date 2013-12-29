@@ -32,6 +32,7 @@ Upload an image to have the og:image and image_url metatags handled for you.  De
 1. Return to the module settings page and copy the text at the bottom of the form and paste into `settings.php` if you wish to disable the ability for admins to change these settings (a good idea once you start getting like counts, etc.)
 
 ## API
+1. Get the current page url for sharing links, Twitter, Facebook, etc. using `loft_social_url()`.
 
 1. You program your social services using the module settings of [On the Web][on_the_web] and you can programatically obtain a service name using `loft_social_get_name()`.  As an example, to set your Twitter name, which is used by the tweet button visit `admin/config/services/on_the_web` and enter your twitter url.
 

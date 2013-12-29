@@ -380,7 +380,7 @@ function loft_social_url($path = NULL) {
   }
   
   // Get the path of the current page if not provided
-  if (1 || !module_exists('fb_social') ||
+  if (!module_exists('fb_social') ||
     !($url = fb_social_url($path))) {
     $base = loft_social_base_url();
     $path = drupal_get_normal_path($path);
