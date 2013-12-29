@@ -71,7 +71,7 @@ function _loft_social_settings_snippet() {
 
   $output = array();
   foreach ($keys as $key) {
-    if ($value = variable_get($key, '')) {
+    if (($value = variable_get($key, NULL)) !== NULL) {
       $output[] = "\$conf['$key'] = \"$value\";";
     }
   }
