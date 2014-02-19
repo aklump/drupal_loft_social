@@ -7,7 +7,7 @@
 It provides a set of social buttons that can be placed in your website in several ways: on all public pages, on all node pages as part of node content or node links, or as one or more blocks placed in regions.  It's up to you to decide how you'd like to use it.
 
 ### Facebook
-This module leverages the [Facebook Social][fb_social] and provides a default like preset.  It also leverages the [Metatag][metatag] modules and overrides form values and metatags to increase the likelihood that you are setup correctly for Facebook.  It insures that the following values in your html source on the front page match exactly.
+This module leverages the [Facebook Social][fb_social] module and provides a default "Like" preset.  It also leverages the [Metatag][metatag] modules and overrides form values and metatags to increase the likelihood that you are setup correctly for Facebook.  It insures that the following values in your html source on the front page match exactly.
 
 1. og:url
 2. shortlink
