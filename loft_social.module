@@ -661,6 +661,22 @@ function loft_social_block_view($delta = '') {
 }
 
 /**
+ * Implements hook_field_extra_fields_alter().
+ */
+function loft_social_field_extra_fields_alter(&$info) {
+  if (variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT) == 4) {
+    foreach (node_type_get_types() as $bundle) {
+      $info['node'][$bundle->type]['display']['loft_social'] = array(
+        'label' => t('Social Links'), 
+        'description' => t('As provided by Loft Social Manager'), 
+        'weight' => 0,
+        //'edit' => l('edit', url(LOFT_SOCIAL_URL_SETTINGS)), 
+      );
+    }
+  }
+}
+
+/**
  * Implements hook_node_view_alter().
  */
 function loft_social_node_view_alter(&$build) {
@@ -672,7 +688,6 @@ function loft_social_node_view_alter(&$build) {
     
     case 4:
       $build['loft_social'] = _loft_social_links_array();
-      $build['loft_social']['#weight'] = variable_get('loft_social_placement_weight', 0);
       break;
   }
 }

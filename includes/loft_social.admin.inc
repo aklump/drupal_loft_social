@@ -183,10 +183,10 @@ function loft_social_settings($form, &$form_state) {
     '#default_value' => variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT),
     '#options' => array(
       0 => t('<em>Hidden</em>'),
-      1 => t('Before the Page Title'), 
-      2 => t('After the Page Title'), 
-      3 => t('Node Links <sup>2</sup>'), 
-      4 => t('Node Content <sup>2</sup>'), 
+      1 => t('Before the page title'), 
+      2 => t('After the page title'), 
+      3 => t('Node links <sup>2</sup>'), 
+      4 => t('Node content <sup>2,3</sup>'), 
     ),
   );
 
@@ -250,26 +250,9 @@ function loft_social_settings($form, &$form_state) {
     );
   }
 
-  $form['rendering']['weight'] = array(
-    '#type' => 'container',
-    '#states' => array(
-      'visible' => array(
-        ':input[name=loft_social_placement]' => array('value' => 4),
-      ),
-    ),
-  );
-
-  $form['rendering']['weight']['loft_social_placement_weight'] = array(
-    '#type' => 'weight',
-    '#title' => t('Weight'),
-    '#description' => t('The lower weight will push this closer to the top in the node content render array.'),
-    '#default_value' => variable_get('loft_social_placement_weight', 0),
-    '#delta' => 10, //the range is from -1 * delta through delta
-  );
-
   $form['rendering']['footnotes'] = array(
     '#weight' => '100', 
-    '#markup' => t('<p><sup>1</sup> Pages are considered public if they are viewable by an anonymous user.</p><p><sup>2</sup> Buttons will not appear on non-node pages.</p>'), 
+    '#markup' => t('<p><sup>1</sup> Pages are considered public if they are viewable by an anonymous user.</p><p><sup>2</sup> Buttons will not appear on non-node pages.</p><p><sup>3</sup> Use Manage Display to control the placement within the node content.</p>'), 
   );  
   
   $vars = array(
