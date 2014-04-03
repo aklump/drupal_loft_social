@@ -98,7 +98,7 @@ function loft_social_settings($form, &$form_state) {
       '#default_value' => FALSE,
     );        
     $form['facebook']['image']['image'] = array(
-      '#prefix' => t('<h3>What the World Sees</h3><p>If you the second image is missing or incorrect, then the <code>og:image</code> metatag does not point to the image file.</p>'), 
+      '#prefix' => t('<h3>What Facebook sees</h3><p>If you the second image is missing or incorrect, then the <code>og:image</code> metatag does not point to the image file.  <em>The most common reason for this is if you are working on a dev server with a base url different from your facebook settings.</em></p>'), 
       '#theme' => 'image', 
       '#path' => $image_published, 
       '#title' => t('Default og:image'), 
