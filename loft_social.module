@@ -696,7 +696,7 @@ function loft_social_node_view_alter(&$build) {
  * Implements hook_init().
  */
 function loft_social_init() {
-  global $_fb_script_init, $_loft_social_page_placement;
+  global $_fb_script_init, $_loft_social_page_placement_;
   if (in_array(variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT), array(1, 2))
     && loft_social_show_on_page()) {
 
@@ -704,7 +704,7 @@ function loft_social_init() {
     // in the page, the reason is that we place in preprocess_page which comes
     // AFTER the fb_share modules page_alter, so we have to prep it here.
     $_fb_script_init = TRUE;    
-    $_loft_social_page_placement = TRUE;
+    $_loft_social_page_placement_ = TRUE;
   }
 }
 
@@ -880,8 +880,8 @@ function loft_social_preprocess_page(&$vars) {
     return;
   }
 
-  global $_loft_social_page_placement;
-  if ($_loft_social_page_placement) {
+  global $_loft_social_page_placement_;
+  if ($_loft_social_page_placement_) {
     switch (variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT)) {
       case 1:
         $vars['title_prefix']['loft_social'] = _loft_social_links_array();

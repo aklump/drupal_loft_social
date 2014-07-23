@@ -177,14 +177,16 @@ function loft_social_settings($form, &$form_state) {
     '#collapsed' => FALSE,
   );
 
+  $before = variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT);
+  // $form['loft_social_placement_before'] = array('#type' => 'value', '#value' => $before);
   $form['rendering']['loft_social_placement'] = array(
     '#type' => 'radios',
     '#title' => t('Page placement of social buttons'),
-    '#default_value' => variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT),
+    '#default_value' => $before,
     '#options' => array(
       0 => t('<em>Hidden</em>'),
-      1 => t('Before the page title'), 
-      2 => t('After the page title'), 
+      1 => t('Before the page title (<code>$title_prefix</code>)'), 
+      2 => t('After the page title (<code>$title_suffix</code>)'), 
       3 => t('Node links <sup>2</sup>'), 
       4 => t('Node content <sup>2,3</sup>'), 
     ),
@@ -348,6 +350,18 @@ function loft_social_settings_validate($form, &$form_state) {
  * @see loft_social_settings_validate()
  */
 function loft_social_settings_submit($form, &$form_state) {
+
+  // This seems to no longer be an issue.  
+  // // When we change to/from node content we must clear caches to rebuild the
+  // // node content.
+  // $previous = $form_state['values']['loft_social_placement_before'];
+  // if ($previous != $form_state['values']['loft_social_placement']
+  //   && ($form_state['values']['loft_social_placement'] == 4
+  //     || $previous == 4)) {
+  //   // cache_clear_all('*', 'cache_page', TRUE);
+  // }
+
+
   if (!empty($form_state['values']['delete_og_image'])) {
     if (($file = file_load($form_state['values']['loft_social_og_image']))
       && file_delete($file)) {
