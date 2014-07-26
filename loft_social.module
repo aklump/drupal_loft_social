@@ -420,6 +420,25 @@ function loft_social_fb_like_button($url = NULL) {
   $url = loft_social_url($url);
   $build = array();
 
+  if (($preset = _loft_social_fb_preset())) {
+    $preset->fb_attrs['href'] = $url;
+    $build = array(
+      '#markup' => fb_social_preset_view($preset),
+    );  
+  }
+
+  $context = array('type' => 'fb_like');
+  drupal_alter('loft_social_button', $build, $context);
+
+  return $build;
+}
+
+/**
+ * Returns the designated fb_social preset for the like action.
+ *
+ * @return object
+ */
+function _loft_social_fb_preset() {
   // Alert admins to create one fb like preset...
   if (!($preset = variable_get('loft_social_fb_preset_like', ''))
     && user_access('loft_social:administer')) {
@@ -432,17 +451,47 @@ function loft_social_fb_like_button($url = NULL) {
       '!url2' => url(LOFT_SOCIAL_URL_SETTINGS), 
     )), 'error', FALSE);
   }
-  if ($preset = fb_social_get_presets($preset)) {
-    $preset->fb_attrs['href'] = $url;
-    $build = array(
-      '#markup' => fb_social_preset_view($preset),
-    );  
+  else {
+    $preset = fb_social_get_presets($preset);
   }
 
-  $context = array('type' => 'fb_like');
-  drupal_alter('loft_social_button', $build, $context);
+  return $preset;
+}
 
-  return $build;
+
+/**
+ * Returns an array suitable for url() for sharing an url.
+ *
+ * @param  string $redirect_uri Where the user goes after sharing.  Be aware
+ *   that this must be allowed in the application urls, or same domain.  This
+ *   will be made absolute via url().
+ * @param  string $url (Optional.)
+ *
+ * @return array      
+ *   - path string
+ *   - options array
+ *     - attributes array
+ *     - query array
+ *
+ * @see loft_social_url($url).
+ */
+function loft_social_fb_share_link($redirect_uri, $url = NULL) {
+  $url = loft_social_url($url);
+  $redirect_uri = loft_social_url($redirect_uri);
+  $array = array(
+    'path' => 'https://www.facebook.com/dialog/share',
+    'options' => array(
+      'attributes' => array(),
+      'query' => array(
+        'app_id' => variable_get('fb_social_appid', ''),
+        'display' => 'popup',
+        'href' => $url,
+        'redirect_uri' => $redirect_uri,
+      ),
+    ),
+  );
+
+  return $array;
 }
 
 /**
