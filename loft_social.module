@@ -524,18 +524,37 @@ function loft_social_fb_share_renderable($url = NULL, $attributes = array()) {
   return $build;
 }
 
-function loft_social_mailto_renderable($message, $subject = NULL, $url = NULL) {
-  $url = loft_social_url($url);
+/**
+ * Return a renderable array for a mailto link.
+ *
+ * @param  string $message
+ * @param  array $context
+ *   - subject
+ *   - subject_base
+ *   - message_base
+ *   - t
+ *
+ * @return array Suitable for drupal_render().
+ */
+function loft_social_mailto_renderable($message, $context = array()) {
 
-  if (!isset($subject)) {
-    $subject = drupal_get_title();
-  }
-  $query['subject'] = t('From @site_name: @subject', array(
-    '@site_name' => preg_replace('/https?:\/\//', '', loft_social_base_url()),
-    '@subject' => $subject, 
-  ));
-  
-  $query['body'] = strip_tags($message) . "\n\n" . t('Continue reading at !url', array('!url' => $url));
+  $context += array(
+    'subject' => drupal_get_title(),
+    'url' => loft_social_url(),
+  );
+  $context = drupal_array_merge_deep(array(
+    'subject_base' => 'From !site_name: !subject',
+    'message_base' => "!message\n\nContinue reading at !url",
+    't' => array(
+      '!site_name' => preg_replace('/https?:\/\//', '', loft_social_base_url()),
+      '!subject' => $context['subject'],
+      '!message' => strip_tags($message),
+      '!url' => loft_social_url($context['url']),
+    ),
+  ), $context);
+
+  $query['subject'] = t($context['subject_base'], $context['t']);
+  $query['body'] = t($context['message_base'], $context['t']);
 
   $build= array(
     '#theme' => 'html_tag', 
