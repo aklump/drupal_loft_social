@@ -96,6 +96,11 @@ function loft_social_form_ctools_export_ui_edit_item_form_alter(&$form, $form_st
     }
   }
 
+  // Make sure the like has layout "button".
+  if (isset($form['fb_social_settings_like']['fb_attrs_like']['layout']['#options'])) {
+    $form['fb_social_settings_like']['fb_attrs_like']['layout']['#options'] += array('button' => 'button');
+  }
+
   if (isset($form['fb_social_settings_recommendations'])) {
     $url = &$form['fb_social_settings_recommendations']['fb_attrs_recommendations']['site'];
     if (!$url['#default_value']) {
@@ -146,7 +151,6 @@ function loft_social_form_metatag_config_edit_form_alter(&$form, $form_state, $f
  * Implements hook_form_alter().
  */
 function loft_social_form_fb_social_admin_settings_form_alter(&$form, $form_state, $form_id) {
-
   // If we have not yet set this variable then we want to force the unaliased
   // version, also if it is set and not equal to 1 then we need to show the
   // other options or it gets confusing.
@@ -157,8 +161,7 @@ function loft_social_form_fb_social_admin_settings_form_alter(&$form, $form_stat
   }
   
   $form['#validate'][] = 'loft_social_form_fb_social_admin_settings_form_validate'; 
-  $form['#submit'][] = 'loft_social_form_fb_social_admin_settings_form_submit'; 
-
+  $form['#submit'][] = 'loft_social_form_fb_social_admin_settings_form_submit';
 }
 
 /**
@@ -492,6 +495,59 @@ function loft_social_fb_share_link($redirect_uri, $url = NULL) {
   );
 
   return $array;
+}
+
+/**
+ * Return a renderable item for a share button.
+ *
+ * @param  string $url        Optional. Defaults to current.
+ * @param  array  $attributes
+ *   - data-width
+ *   - data-layout
+ *
+ * @return array
+ */
+function loft_social_fb_share_renderable($url = NULL, $attributes = array()) {
+  $url = loft_social_url($url);
+  $attributes += array(
+    'class' => array(),
+    'data-href' => $url,
+    'data-type' => 'button',
+  );
+  $attributes['class'][] = 'fb-share-button';
+  $build = array(
+    '#theme' => 'html_tag', 
+    '#tag' => 'div', 
+    '#attributes' => $attributes, 
+  );
+  
+  return $build;
+}
+
+function loft_social_mailto_renderable($message, $subject = NULL, $url = NULL) {
+  $url = loft_social_url($url);
+
+  if (!isset($subject)) {
+    $subject = drupal_get_title();
+  }
+  $query['subject'] = t('From @site_name: @subject', array(
+    '@site_name' => preg_replace('/https?:\/\//', '', loft_social_base_url()),
+    '@subject' => $subject, 
+  ));
+  
+  $query['body'] = strip_tags($message) . "\n\n" . t('Continue reading at !url', array('!url' => $url));
+
+  $build= array(
+    '#theme' => 'html_tag', 
+    '#tag' => 'a', 
+    '#attributes' => array(
+      'href' => 'mailto:?' . drupal_http_build_query($query),
+      'title' => t('Email'),
+      'class' => array('loft-social-mailto')
+    ), 
+    '#value' => t('Email'),
+  );
+  return $build;
 }
 
 /**
