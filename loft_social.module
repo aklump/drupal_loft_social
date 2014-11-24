@@ -890,17 +890,33 @@ function loft_social_metatag_metatags_view_alter(&$output, $instance) {
     if ($total < $max) {
       $tallies['og:image'][0]++;
       $id = 'metatag_og:image:' . $total;
-      $element[] = array(
-        array(
-          '#theme' => 'metatag_opengraph', 
-          '#tag' => 'meta', 
-          '#id' => $id, 
-          '#name' => 'og:image', 
-          '#value' => $url, 
-          '#weight' => $weight++, 
-        ),
-        $id,
-      );
+
+      if (function_exists('theme_metatag_opengraph')) {
+        $element[] = array(
+          array(
+            '#theme' => 'metatag_opengraph', 
+            '#tag' => 'meta', 
+            '#id' => $id, 
+            '#name' => 'og:image', 
+            '#value' => $url, 
+            '#weight' => $weight++, 
+          ),
+          $id,
+        );
+      }
+      else {
+        $element[] = array(
+          array(
+            '#theme' => 'metatag_property',
+            '#tag' => 'meta', 
+            '#id' => $id, 
+            '#name' => 'og:image', 
+            '#value' => $url, 
+            '#weight' => $weight++, 
+          ),
+          $id,
+        );
+      }
     }
 
     // do other tags? in the future...
