@@ -537,11 +537,17 @@ function loft_social_fb_share_renderable($url = NULL, $attributes = array()) {
  * @return array Suitable for drupal_render().
  */
 function loft_social_mailto_renderable($message, $context = array()) {
-
   $context += array(
-    'subject' => drupal_get_title(),
+    'subject' => NULL,
     'url' => loft_social_url(),
   );
+
+  // We do this so we don't get the check plain version of the title
+  // which would screw up the subject, e.g., Marie&#039;s Dictionary.
+  if (!isset($context['subject']) && function_exists('menu_get_active_title')) {
+    $context['subject'] = menu_get_active_title();
+  }  
+
   $context = drupal_array_merge_deep(array(
     'subject_base' => 'From !site_name: !subject',
     'message_base' => "!message\n\nContinue reading at !url",
@@ -556,7 +562,7 @@ function loft_social_mailto_renderable($message, $context = array()) {
   $query['subject'] = t($context['subject_base'], $context['t']);
   $query['body'] = t($context['message_base'], $context['t']);
 
-  $build= array(
+  $build = array(
     '#theme' => 'html_tag', 
     '#tag' => 'a', 
     '#attributes' => array(
@@ -566,6 +572,7 @@ function loft_social_mailto_renderable($message, $context = array()) {
     ), 
     '#value' => t('Email'),
   );
+
   return $build;
 }
 
