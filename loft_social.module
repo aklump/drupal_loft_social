@@ -533,14 +533,30 @@ function loft_social_fb_share_renderable($url = NULL, $attributes = array()) {
  *   - subject_base
  *   - message_base
  *   - t
+ * @param  array options
+ *   - string callback Defaults to drupal_html_to_text().
+ *   - array callback_args Args to send to the callback function.
  *
  * @return array Suitable for drupal_render().
+ *
+ * @see  drupal_html_to_text().
  */
-function loft_social_mailto_renderable($message, $context = array()) {
+function loft_social_mailto_renderable($message, $context = array(), $options = array()) {
   $context += array(
     'subject' => NULL,
     'url' => loft_social_url(),
   );
+
+  $options += array(
+    'callback' => 'drupal_html_to_text',
+    'callback_args' => array(),
+  );
+
+  // Process html to plain text (or other callback).
+  if (function_exists($options['callback'])) {
+    array_unshift($options['callback_args'], $message);
+    $message = call_user_func_array($options['callback'], $options['callback_args']);
+  }
 
   // We do this so we don't get the check plain version of the title
   // which would screw up the subject, e.g., Marie&#039;s Dictionary.
@@ -550,7 +566,7 @@ function loft_social_mailto_renderable($message, $context = array()) {
 
   $context = drupal_array_merge_deep(array(
     'subject_base' => 'From !site_name: !subject',
-    'message_base' => "!message\n\nContinue reading at !url",
+    'message_base' => "!message\nContinue reading at !url",
     't' => array(
       '!site_name' => preg_replace('/https?:\/\//', '', loft_social_base_url()),
       '!subject' => $context['subject'],
