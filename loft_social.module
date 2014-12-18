@@ -42,6 +42,64 @@ function loft_social_permission() {
 }
 
 /**
+ * Hook to plug into loft_social for custom elements.
+ *
+ * This can be used by modules who want to hook into the loft_social
+ * mechanism for debugging, disabling etc.
+ *
+ * @param   [varname] [description]
+ */
+function loft_social_prepare(&$mixed, $id = NULL) {
+
+  $context = array();
+  $context['original'] = $mixed;
+  $context['suspend'] = variable_get('loft_social_suspend', FALSE);
+  $context['id'] = $id;
+  $args = func_get_args();
+  array_shift($args);
+  array_shift($args);
+  $context['args'] = $args;
+
+  if ($context['suspend']) {
+    // if this has element properties then we'll set the access to zero
+    if (element_properties($mixed)) {
+      $mixed['#access'] = FALSE;
+    }
+
+    // Otherwise we'll set it to null if suspended
+    else {
+      switch (gettype($mixed)) {
+        case 'boolean':
+          $mixed = FALSE;
+          break;
+
+        case 'integar':
+          $mixed = 0;
+          break;
+
+        case 'string':
+          $mixed = '';
+          break;
+
+        case 'array':
+          $mixed = array();
+          break;
+
+        case 'object':
+          $mixed = (object) array();
+          break;
+
+        default:
+          $mixed = NULL;
+          break;
+      }
+    }
+  }
+
+  module_invoke_all('loft_social_prepare', $mixed, $context);
+}
+
+/**
  * Implements hook_menu().
  */
 function loft_social_menu() {
@@ -808,6 +866,15 @@ function loft_social_block_view($delta = '') {
 }
 
 /**
+ * Implements hook_block_view_alter().
+ */
+function loft_social_block_view_alter(&$data, $block) {
+  if ($preset = fb_social_get_presets($block->delta)) {
+    loft_social_prepare($data, __FUNCTION__, $block);
+  }
+}
+
+/**
  * Implements hook_field_extra_fields_alter().
  */
 function loft_social_field_extra_fields_alter(&$info) {
@@ -827,6 +894,10 @@ function loft_social_field_extra_fields_alter(&$info) {
  * Implements hook_node_view_alter().
  */
 function loft_social_node_view_alter(&$build) {
+  if (isset($build['links']['fb_social'])) {
+    loft_social_prepare($build['links']['fb_social'], __FUNCTION__, $build);
+  }
+
   switch (variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT)) {
     case 3:
       $links = _loft_social_links_array();
@@ -1030,6 +1101,14 @@ function loft_social_show_on_page() {
   drupal_alter('loft_social_show_on_page', $context);
 
   return $context['access'];
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function loft_social_page_alter(&$page) {
+  global $_fb_script_init;
+  loft_social_prepare($_fb_script_init, __FUNCTION__, $page);
 }
 
 /**

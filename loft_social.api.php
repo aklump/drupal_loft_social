@@ -8,6 +8,47 @@
  */
 
 /**
+ * Plug your module into loft_social.
+ *
+ * If you are generating a social-related element such as a block or render
+ * array, by sending it through this function, you will hook into loft_social
+ * and have access to debugging, disabling and other modules may hook into
+ * your element as well.
+ *
+ * Implement this in your code something like this:
+ *
+ * @code
+ *     if (module_exists('loft_social')) {
+ *       loft_social_prepare($arg, __FUNCTION__));
+ *     }
+ * @endcode
+ *
+ * @param  mixed $mixed
+ *   When loft_social is suspended, $mixed will be emptied to the original
+ *   data type so an array will become an empty array, a string an empty string.
+ *   If $mixed has properties then instead '#access' will be set to FALSE.
+ * @param string $id
+ * @param  ...
+ */
+function loft_social_prepare($mixed, $id) {
+
+}
+
+/**
+ * Implements hook_loft_social_prepare().
+ *
+ * @param  mixed $mixed
+ * @param  array $context
+ *   - id string An optional identifier for $mixed.
+ *   - suspend bool If social items are currently suspended or not.
+ *   - original mixed $mixed before any manipulattion by loft_social.
+ *   - args array Any additional args send to loft_social_prepare.
+ */
+function hook_loft_social_prepare(&$mixed, $context) {
+  
+}
+
+/**
  * Implements hook_loft_social_button_alter().
  *
  * Alter the html content of a social button.

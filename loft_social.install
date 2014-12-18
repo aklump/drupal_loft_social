@@ -38,4 +38,15 @@ function loft_social_enable() {
     '!url' => url(LOFT_SOCIAL_URL_SETTINGS),
     '!url2' => url(LOFT_SOCIAL_URL_FB_SETTINGS),
   )));
+
+  try {
+    $num_updated = db_update('system')
+    ->fields(array(
+      'weight' => -1,  
+    ))
+    ->condition('name', 'loft_social')
+    ->execute();
+  } catch (Exception $e) {
+    watchdog_exception('loft_social', $e);
+  }
 }
