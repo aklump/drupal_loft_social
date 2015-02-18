@@ -23,6 +23,8 @@ define('LOFT_SOCIAL_OG_IMAGE_CT_MAX', 3);
 // Do not show on the following public pages.
 $pages = <<<EOD
 user/login
+user/logout
+user/register
 user/password
 search
 search/*
@@ -1041,6 +1043,7 @@ function loft_social_show_on_page() {
   }
    // Match path if necessary.
   elseif ($context['pages']) {
+
     // Convert path to lowercase. This allows comparison of the same path
     // with different case. Ex: /Page, /page, /PAGE.
     $context['pages'] = drupal_strtolower($context['pages']);

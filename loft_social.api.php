@@ -85,6 +85,13 @@ function hook_loft_social_show_on_page_alter(&$context) {
   if ($context['url'] === 'contact') {
     $context['access'] = FALSE;
   }
+
+  // Or you can leverage drupal_match_path...
+  if (drupal_match_path($context['url'], implode("\n", array(
+    'user/*/*',
+  )))) {
+    $context['access'] = FALSE;
+  }  
 }
 
 /**
