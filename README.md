@@ -23,6 +23,10 @@ Upload an image to have the og:image and image_url metatags handled for you.  De
 * This module works hand-in-hand with [On the Web][on_the_web] to create a tweet button from the account you've entered in On the Web.
 * If you enable [Shorten URLs][shorten], twitter links will be shortened using the chosen service.
 
+### Open Graph
+Open graph tags are supported when this module leverages metatag and metatag_opengraph.  See `loft_social.api.php` for hook(s).
+* <http://ogp.me/#types>
+
 ## Installation/Configuration
 1. Install as usual, see [http://drupal.org/node/70151](http://drupal.org/node/70151) for further information.
 1. Visit `admin/structure/fbsocial` and set your _Facebook application id_ and _Base URL_ and submit the form.
