@@ -132,3 +132,29 @@ function hook_loft_social_metatags_alter(&$output, $context) {
     $output['description']['#attached']['drupal_add_html_head'][0][0]['#value'] = 'O rly?';
   }
 }
+
+/**
+ * Implements hook_loft_social_url_path_alter().
+ *
+ * This hook can be used to modify the default path used by loft_social_url().
+ * It can also be used to modify the path argument before it is handled by the
+ * function.
+ *
+ * @param  string $path
+ * @param  array $context
+ *   - args array The arguments sent to loft_social_url().
+ *   - default string the default path to use when $path is not provided to
+ *     loft_social_url().
+ */
+function hook_loft_social_url_path_alter(&$path, &$context) {
+  global $_my_module_sharing_links_node_;
+
+  if (!($node = $_my_module_sharing_links_node_)) {
+    $node = menu_get_object();
+  }
+
+  // Set the default to point to the target node.
+  if ($node && ($node = my_module_get_target_node($node)) && !empty($node->nid)) {
+    $context['default'] = 'node/' . $node->nid;
+  }
+}
