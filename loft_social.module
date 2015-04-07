@@ -20,6 +20,14 @@ define('LOFT_SOCIAL_OG_IMAGE_STYLE', 'loft_social_og_image_400x');
 define('LOFT_SOCIAL_OG_IMAGE_MIN', '200x200');
 define('LOFT_SOCIAL_OG_IMAGE_CT_MAX', 3);
 
+/**
+ * @var LOFT_SOCIAL_TWEET_MAX_CHARS
+ *
+ * The maximum number of chars allowed in a Twitter tweet.
+ * @see  https://dev.twitter.com/overview/api/counting-characters
+ */
+define('LOFT_SOCIAL_TWEET_MAX_CHARS', 140);
+
 // Do not show on the following public pages.
 $pages = <<<EOD
 user/login
@@ -1289,4 +1297,27 @@ function loft_social_image_default_styles() {
   );
 
   return $styles;
+}
+
+/**
+ * Return the character length of a tweet.
+ *
+ * @param  string $text The data-text component.
+ * @param  string $url The data-url component.
+ * @param  string $via The twitter username of the source, i.e., data-via
+ *
+ * @return int The number of chars of the tweet.
+ */
+function loft_social_tweet_len($text, $url = NULL, $via = NULL) {
+  $tweet = t('!text !url via @!via', array(
+    '!text' => $text,
+    '!url' => $url,
+    '!via' => trim($via, '@'),
+  ));
+  $tweet = preg_replace("/\s*via @$/", "", $tweet);
+  if (class_exists('Normalizer')) {
+    $tweet = Normalizer::normalize($tweet);
+  }
+
+  return strlen($tweet);
 }

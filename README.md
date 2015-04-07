@@ -22,6 +22,7 @@ Upload an image to have the og:image and image_url metatags handled for you.  De
 ### Twitter
 * This module works hand-in-hand with [On the Web][on_the_web] to create a tweet button from the account you've entered in On the Web.
 * If you enable [Shorten URLs][shorten], twitter links will be shortened using the chosen service.
+* Use the constant `LOFT_SOCIAL_TWEET_MAX_CHARS` as needed.
 
 ### Open Graph
 Open graph tags are supported when this module leverages metatag and metatag_opengraph.  See `loft_social.api.php` for hook(s).
