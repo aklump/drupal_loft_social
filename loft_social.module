@@ -434,7 +434,7 @@ function loft_social_metatag_config_presave($config, $conf = NULL) {
 }
 
 /**
- * Return a social safe url
+ * Return a non-ssl, absolute social safe url.
  *
  * 1. If absolute and base url matches our social base url then make sure it's
  * http
@@ -449,51 +449,39 @@ function loft_social_metatag_config_presave($config, $conf = NULL) {
  *
  * @tested
  *
- * @see  loft_social_url_path_alter
+ * @see  loft_social_url_default_alter().
  */
 function loft_social_url($path = NULL) {
-  $context = array(
-    'args' => func_get_args(),
-    'default' => current_path(),
-  );
-  
-  drupal_alter('loft_social_url_path', $path, $context);
-  
   if (empty($path)) {
-    $path = $context['default'];
+    $path = current_path();
+    drupal_alter('loft_social_url_default', $path);
   }
-  
-  // static key should be based on the relative url.
-  $static_key = $path;
-  $regex = 'https?' . preg_quote('://' . loft_social_base_url(PHP_URL_HOST) . '/', '/') . '?';
-  $static_key = preg_replace("/$regex/", '', $static_key);  
-  $paths = &drupal_static(__FUNCTION__, array());
-  if (!array_key_exists($static_key, $paths)) {
-    // Get the unaliased path of the current page if not provided
-    if (!module_exists('fb_social') ||
-      !($url = fb_social_url($path))) {
-      $base = loft_social_base_url();
+
+  $urls = &drupal_static(__FUNCTION__, array());
+  if (!array_key_exists($path, $urls)) {
+    $url_args = array(
+      'absolute' => TRUE,
+      // By default set this to true so it doesn't get aliased.
+      'alias' => variable_get('fb_social_urls_mode', 1),
+      'base_url' => loft_social_base_url()
+    );
+
+    // The facebook module will return an unaliased, absolute url for us.
+    if (!module_exists('fb_social') || !($url = fb_social_url($path))) {
       $path = drupal_get_normal_path($path);
-      $url = url($path, array(
-        'absolute' => TRUE,
-
-        // This means it's already an alias so don't convert it. Even though
-        // it's not really an alias, we do this so it doens't become one.
-        'alias' => TRUE,
-
-        'base_url' => $base,
-      ));
+      $url  = url($path, $url_args);  
     }
 
-    // Make sure this is http, as https is considered a different url
-    if (loft_social_base_url(PHP_URL_HOST) == parse_url($url, PHP_URL_HOST)) {
-      $url = str_replace('https://', 'http://', (string) $url);  
+    // At this point, url is absolute and we'll make sure it's http.
+    // Make sure this is http, as https is considered a different url.
+    if (loft_social_base_url(PHP_URL_HOST) === parse_url($url, PHP_URL_HOST)) {
+      $url = str_replace('https://', 'http://', (string) $url);
     }
 
-    $paths[$static_key] = $url;
+    $urls[$path] = $url;
   }
-  
-  return $paths[$static_key];
+
+  return $urls[$path];
 }
 
 /**
