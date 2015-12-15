@@ -503,7 +503,7 @@ function loft_social_fb_like_button($url = NULL) {
     );  
   }
 
-  $context = array('type' => 'fb_like');
+  $context = array('type' => 'fb_like', 'service_id' => 'facebook');
   drupal_alter('loft_social_button', $build, $context);
 
   return $build;
@@ -554,7 +554,7 @@ function _loft_social_fb_preset() {
 function loft_social_fb_share_link($redirect_uri, $url = NULL) {
   $url = loft_social_url($url);
   $redirect_uri = loft_social_url($redirect_uri);
-  $array = array(
+  $link = array(
     'path' => 'https://www.facebook.com/dialog/share',
     'options' => array(
       'attributes' => array(),
@@ -567,7 +567,10 @@ function loft_social_fb_share_link($redirect_uri, $url = NULL) {
     ),
   );
 
-  return $array;
+  $context = array('type' => 'fb_share_link', 'service_id' => 'facebook');
+  drupal_alter('loft_social_button', $link, $context);
+
+  return $link;
 }
 
 /**
@@ -594,6 +597,9 @@ function loft_social_fb_share_renderable($url = NULL, $attributes = array()) {
     '#attributes' => $attributes, 
   );
   
+  $context += array('type' => 'fb_share', 'service_id' => 'facebook');
+  drupal_alter('loft_social_button', $build, $context);
+
   return $build;
 }
 
@@ -602,10 +608,10 @@ function loft_social_fb_share_renderable($url = NULL, $attributes = array()) {
  *
  * @param  string $message
  * @param  array $context
- *   - subject
+ *   - subject string The mailto subject.
  *   - subject_base
- *   - message_base
- *   - t
+ *   - message_base Teh mailto message.
+ *   - t array t() arguments for the other context strings.
  * @param  array options
  *   - string callback Defaults to drupal_html_to_text().
  *   - array callback_args Args to send to the callback function.
@@ -679,68 +685,176 @@ function loft_social_mailto_renderable($message, $context = array(), $options = 
  * @tested
  */
 function loft_social_get_name($social_key) {
-  $name = '';
-  $url = variable_get("on_the_web_{$social_key}_page", '');
-  switch ($social_key) {
-    case 'google':
-      if (preg_match('/https?:\/\/plus\.google\.com\/(.*?)\/posts/i', $url, $matches)) {
-        $name = $matches[1];  
-      }
-      break;
-    case 'youtube':
-      $name = basename($url);
-      break;
+  static $drupal_static_fast;
+  if (!isset($drupal_static_fast)) {
+    $drupal_static_fast['names'] = &drupal_static(__FUNCTION__, NULL);
+  }
+  $names = &$drupal_static_fast['names'];
+  if (!isset($names)) {
+    $names[$social_key] = '';
+    $url = variable_get("on_the_web_{$social_key}_page", '');
+    switch ($social_key) {
+      case 'google':
+        if (preg_match('/https?:\/\/plus\.google\.com\/(.*?)\/posts/i', $url, $matches)) {
+          $names[$social_key] = $matches[1];  
+        }
+        break;
+      case 'youtube':
+        $names[$social_key] = basename($url);
+        break;
 
-    default:
-      $url = parse_url($url);
-      $url = $url['path'];
-      $name = trim($url, '/');
+      default:
+        $url = parse_url($url);
+        $url = $url['path'];
+        $names[$social_key] = trim($url, '/');
+    }
+    drupal_alter('loft_social_get_name', $names[$social_key], $social_key);
+  }
+  
+  return $names[$social_key];
+}
+
+/**
+ * Returns a renderable array for a tweet link for the current page.
+ *
+ * @param string $url
+ *   (Optional) Defaults to NULL.  If omitted the current page url will be used,
+ *   otherwise this url will be used.
+ * @param string $text
+ *   Optional, if empty the node title or page title will be used.
+ * @param array $context
+ *   This will be passed to loft_social_button_alter, be careful not to clobber
+ *   the key 'type' by accident.
+ *
+ * @return renderable
+ *
+ * @see http://stackoverflow.com/questions/22778849/twitter-share-button-without-the-twitter-icon-just-the-sharing
+ */
+function loft_social_tweet_link($url = NULL, $text = NULL, $context = array()) {
+  global $is_https;
+  $http_protocol = $is_https ? 'https' : 'http';
+  $service_id    = 'twitter';
+  list($twitter_name, $tiny, $text, $language, $length, $remaining) = _loft_social_preprocess_tweet($url, $text);
+
+  if (!($twitter_name)) {
+    return FALSE;
   }
 
-  return $name;
+  $build = array(
+    '#loft_social_tweet_length' => $length,
+    '#loft_social_tweet_remaining' => $remaining,
+    '#theme' => 'link', 
+    '#text' => t('Tweet'),
+    '#path' => $http_protocol . '://twitter.com/share',
+    '#options' => array(
+      'attributes' => array(
+        'class' => array(
+          'loft-social-tweet-link',
+          'loft-social-is-popup-ready',
+        ),
+        'data-loft-social-service' => $service_id,
+        'data-loft-social-title' => t('Tweet'),
+      ),
+      'query' => array(
+        'text' => $text,
+        'url' => $tiny,
+        'via' => $twitter_name,
+        'tw_p' => 'tweetbutton',
+      ),
+    ),
+  );
+
+  $build['#attached']['js'][] =  array(
+    'type' => 'file', 
+    'data' => drupal_get_path('module', 'loft_social') . '/loft_social.js',
+  );
+
+  $context += array('type' => 'tweet_link', 'service_id' => $service_id);
+  drupal_alter('loft_social_button', $build, $context);
+
+  return $build;
+}
+
+/**
+ * Preprocess tweet data.
+ *
+ * @see loft_social_tweet_link().
+ * @see loft_social_tweet_button().
+ *
+ * @code
+ *   list($twitter_name, $tiny, $text, $language, $length, $remaining) = _loft_social_preprocess_tweet($text, $url);
+ * @endcode
+ */
+function _loft_social_preprocess_tweet($url = NULL, $text = NULL) {
+  $return = array(
+    0 => loft_social_get_name('twitter'),
+    1 => loft_social_url($url),
+    2 => NULL,
+    3 => language_default('language'),
+  );
+
+  if (!empty($text)) {
+    $return[2] = strip_tags($text);
+  }
+  else {
+    $node = menu_get_object();
+    $return[2] = !empty($node->title) ? $node->title : drupal_get_title();
+  }
+
+  $return[4] = loft_social_tweet_len($return[2], $return[1], $return[0]);
+  $return[5] = LOFT_SOCIAL_TWEET_MAX_CHARS - $return[4];
+
+  return $return;
 }
 
 /**
  * Returns a render array for a tweet button for the current page.
  *
- * @param  string $url (Optional) Defaults to NULL.  If omitted the current
- * page url will be used, otherwise this url will be used.
+ * @param string $url
+ *   (Optional) Defaults to NULL.  If omitted the current page url will be used,
+ *   otherwise this url will be used.
+ * @param string $text
+ *   Optional, if empty the node title or page title will be used.
+ * @param array $context
+ *   This will be passed to loft_social_button_alter, be careful not to clobber
+ *   the key 'type' by accident.
+ *
+ * @see https://dev.twitter.com/web/tweet-button
+ * @see https://dev.twitter.com/web/tweet-button/parameters#button
+ *
+ * @return renderable
  */
-function loft_social_tweet_button($url = NULL) {
+function loft_social_tweet_button($url = NULL, $text = NULL, $context = array()) {
   global $is_https;
+  $http_protocol = $is_https ? 'https' : 'http';
+  $service_id    = 'twitter';
+  list($twitter_name, $tiny, $text, $language, $length, $remaining) = _loft_social_preprocess_tweet($url, $text);
 
-  if (!($twitter_name = loft_social_get_name('twitter'))) {
+  if (!($twitter_name)) {
     return FALSE;
   }
-  
-  $http_protocol  = $is_https ? 'https' : 'http';  
-  $url            = loft_social_url($url);
-  $tiny           = shorten_url($url);
 
-  // Gleen the hero image of the page
-  if (($node = menu_get_object())) {
-    // @todo generate the teaser text.
-    $teaser = '';
-  }
-  $title = !empty($node->title) ? $node->title : drupal_get_title();
-
-  /**
-   * Twitter
-   */
   $twitter = array(
-    'href' => $http_protocol . '://twitter.com/share',
     'class' => array('twitter-share-button'),
-    'data-counturl' => $url,
-    // @todo read the current lang of the site
-    'data-lang' => 'en',
+    'href' => $http_protocol . '://twitter.com/share',
+    // 'data-size' => 'large',
+    'data-text' => $text,
     'data-url' => $tiny,
-    'data-text' => $title,
+    // 'data-hashtags' => '',
     'data-via' => $twitter_name,
+    // 'data-related' => '',
+    'data-counturl' => $url,
+    'data-lang' => $language,
   );
 
   $build = array(
-    //'#href' => $url,
-    '#markup' => '<a' . drupal_attributes($twitter) . '>Tweet</a>',
+    '#type' => 'html_tag',
+    '#tag' => 'a',
+    '#value' => 'Tweet',
+    '#attributes' => $twitter,
+    '#suffix' => '</a>',
+    '#loft_social_tweet_length' => $length,
+    '#loft_social_tweet_remaining' => $remaining,
     '#attached' => array(
       'js' => array(
         array(
@@ -761,10 +875,10 @@ function loft_social_tweet_button($url = NULL) {
     ),
   );
 
-  $context = array('type' => 'tweet');
+  $context += array('type' => 'tweet', 'service_id' => $service_id);
   drupal_alter('loft_social_button', $build, $context);
 
-  return $build;  
+  return $build;
 }
 
 /**
@@ -1305,24 +1419,288 @@ function loft_social_image_default_styles() {
 }
 
 /**
+ * Implements hook_filter_info().
+ *
+ * Here we define the different filters provided by the module. For this example,
+ * time_filter is a very static and simple replacement, but it requires some
+ * preparation of the string because of the special html tags < and >. The
+ * foo_filter is more complex, including its own settings and inline tips.
+ */
+function loft_social_filter_info() {
+  $filters['loft_social_tweet'] = array(
+    'title' => t('Add a tweet button to certain html elements.'),
+    'process callback'  => '_loft_social_filter_process',
+    'default settings' => array(
+      'tags' => 'q',
+      'type' => 'button',
+      'position' => 'after',
+      'too_long' => 'skip',
+      // 'too_long_suffix' => json_decode('"\u8230"'),
+      'too_long_suffix' => "...",
+    ),
+    'settings callback' => '_loft_social_filter_settings',
+    'tips callback' => '_loft_social_tips',
+  );
+
+  return $filters;
+}
+
+/**
+ * Settings callback for theme tag filter
+ *
+ * Make use of $format to have different replacements for every input format.
+ * Since we allow the administrator to define the string that gets substituted
+ * when "foo" is encountered, we need to provide an interface for this kind of
+ * customization. The object format is also an argument of the callback.
+ *
+ * The settings defined in this form are stored in database by the filter
+ * module, and they will be available in the $filter argument.
+ */
+function _loft_social_filter_settings($form, $form_state, $filter, $format, $defaults) {
+  $default_values = $filter->settings + $defaults;
+  $settings['tags'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Html tags'),
+    '#description' => t('One or more CSV tags to which tweet buttons will be added.  The innerHTML of the tag will be used as the tweet text.'),
+    '#default_value' => $default_values['tags'],
+    '#required' => TRUE,
+  );
+  $settings['type'] = array(
+    '#type' => 'select',
+    '#title' => t('Type'),
+    '#default_value' => $default_values['type'],
+    '#required' => TRUE,
+    '#options' => array(
+      'link' => t('Link'),
+      'button' => t('Button'),
+    ),
+  );
+  $settings['position'] = array(
+    '#type' => 'select',
+    '#title' => t('Position'),
+    '#default_value' => $default_values['position'],
+    '#required' => TRUE,
+    '#options' => array(
+      'before' => t('Before'),
+      'after' => t('After'),
+    ),
+  );
+  $settings['too_long'] = array(
+    '#type' => 'select',
+    '#title' => t('When text is too long...'),
+    '#default_value' => $default_values['too_long'],
+    '#required' => TRUE,
+    '#options' => array(
+      'skip' => t('Skip the tag'),
+      'truncate' => t('Truncate the quote inside the twitter button'),
+      'add' => t('Add the tweet button anyway'),
+    ),
+  );
+
+  // @todo Not working, no time 2015-12-15T12:27, aklump
+  // $settings['too_long_suffix'] = array(
+  //   '#type' => 'textfield',
+  //   '#title' => t('Truncate suffix'),
+  //   // '#description' => t('One or more CSV tags to which tweet buttons will be added.  The innerHTML of the tag will be used as the tweet text.'),
+  //   '#default_value' => $defaults['too_long_suffix'],
+  //   '#required' => TRUE,
+  //   '#states' => array(
+  //     'required' => array(
+  //       ':input[name=filters[loft_social_tweet][settings][too_long]]' => array(
+  //         array('value' => 'truncate'),
+  //       ),
+  //     ),
+  //     'visible' => array(
+  //       ':input[name=filters[loft_social_tweet][settings][too_long]]' => array(
+  //         array('value' => 'truncate'),
+  //       ),
+  //     ),
+  //   ),
+  // ); 
+
+  return $settings;
+}
+
+/**
+ * theme tag filter process callback.
+ *
+ * The actual filtering is performed here. The supplied text should be returned,
+ * once any necessary substitutions have taken place. The example just replaces
+ * foo with our custom defined string in the settings page.
+ */
+function _loft_social_filter_process($text, $filter, $format) {
+  if ($filter->name === 'loft_social_tweet') {
+    try {
+      $obj  = new SocialTweetFilter($filter->settings);
+      $text = $obj->replace($text);
+    } catch (Exception $e) {
+      // @todo Only by permission?
+      drupal_set_message($e->getMessage(), 'status', FALSE);
+      watchdog_exception('loft_social', $e);
+    }
+  }  
+  return $text;
+}
+
+/**
+ * Filter tips callback for theme tag filter.
+ *
+ * The tips callback allows filters to provide help text to users during the
+ * content editing process. Short tips are provided on the content editing
+ * screen, while long tips are provided on a separate linked page. Short tips
+ * are optional, but long tips are highly recommended.
+ */
+function _loft_social_tips($filter, $format, $long = FALSE) {
+  if ($filter->name === 'loft_social_tweet') {
+    $f = new SocialTweetFilter($filter->settings);
+    $t_vars = array(
+      '%tags' => '<' . implode('>, <', $f->tags) . '>',
+      '%pos' => $filter->settings['position'],
+    );
+    if ($long) {
+      return t("Add a tweet button %pos to all %tags elements.", $t_vars);
+    }
+    else {
+      return t('Make all %tags tags "tweetable".', $t_vars);
+    }
+  }
+}
+
+
+/**
  * Return the character length of a tweet.
+ *
+ * The short of it is, any url in a tweet counts for 23 characters, no matter
+ * how long it appears in the box, it will count for 23 chars. It will be 24
+ * chars if it is https.
  *
  * @param  string $text The data-text component.
  * @param  string $url The data-url component.
  * @param  string $via The twitter username of the source, i.e., data-via
  *
  * @return int The number of chars of the tweet.
+ *
+ * @see
+ * http://mashable.com/2012/12/07/twitter-url-117-characters/#o3PVbRkY2mqy
+ * @see http://mashable.com/2013/02/20/twitter-tco-length/#ZctQm0x.Dgq0
+ * @see https://dev.twitter.com/overview/api/counting-characters
+ * @see
+ * http://www.geek.com/news/twitter-now-limits-tweets-to-117-characters-if-you-include-a-link-1540340/
  */
 function loft_social_tweet_len($text, $url = NULL, $via = NULL) {
+
+  // URLs will be reduced to 118 characters, 117 for https links
+  if ($url) {
+    $repeat = 23;
+    if (strpos($url, 'https')) {
+      $repeat++;
+    }
+    $url = isset($url) ? str_repeat('*', $repeat) : ''; 
+  }
+
   $tweet = t('!text !url via @!via', array(
     '!text' => $text,
     '!url' => $url,
     '!via' => trim($via, '@'),
   ));
-  $tweet = preg_replace("/\s*via @$/", "", $tweet);
   if (class_exists('Normalizer')) {
     $tweet = Normalizer::normalize($tweet);
   }
 
   return strlen($tweet);
+}
+
+/**
+ * Represents a SocialTweetFilter object class.
+ */
+class SocialTweetFilter {
+
+  public $tags = array();
+
+  protected $settings = array();
+  
+  /**
+   * Constructor
+   *
+   * @param Array $settings
+   *   - tags string
+   *     CSV of tags to replace
+   *   - position string
+   *     - before
+   *     - after
+   *   - too_long
+   *     - skip
+   */
+  public function __construct(Array $settings) {
+    $this->settings = $settings;
+    $this->tags = array_filter(explode(',', str_replace(' ', '', $this->settings['tags'])));
+  }
+  
+  /**
+   * Perform replacements on $text per settings.
+   *
+   * @param string $text
+   *
+   * @return string
+   *   The text with replacements.
+   */
+  public function replace($text) {
+    $this->tags;
+    foreach ($this->tags as $tag) {
+      $this->replaceTag($text, $tag);
+    }
+    return $text;
+  }
+
+  /**
+   * Add the tweet button to a single tag in a body of text.
+   *
+   * @param string &$source
+   *   The source text to search for the $tag
+   * @param string $tag
+   *   This should be like this 'q' and not '<q>'.
+   */
+  protected function replaceTag(&$source, $tag) {
+    // Fast rejection...
+    if (strpos($source, "</{$tag}>") === FALSE) {
+      return;
+    }
+
+    $type_function = 'loft_social_tweet_button';
+    if ($this->settings['type'] === 'link') {
+      $type_function = 'loft_social_tweet_link';
+    }
+
+    preg_match_all("/(<{$tag}.*?>)(.+)(<\/{$tag}>)/", $source, $matches);
+    foreach ($matches[2] as $key => $inner_html) {
+      $tweet = strip_tags($inner_html);
+      $build = $type_function(NULL, $tweet);
+      
+      // Too long handling.
+      if ($build['#loft_social_tweet_remaining'] < 0) {
+        if ($this->settings['too_long'] === 'skip') {
+          continue;
+        }
+        if ($this->settings['too_long'] === 'truncate') {
+          $tweet = substr($tweet, 0, strlen($tweet) + $build['#loft_social_tweet_remaining']);
+          
+          if ($this->settings['too_long_suffix']) {
+            $tweet = substr($tweet, 0, -1 * strlen($this->settings['too_long_suffix'])) . $this->settings['too_long_suffix'];
+          }
+          $build = $type_function(NULL, $tweet);
+        }
+      }
+      $tweet = drupal_render($build);
+      switch ($this->settings['position']) {
+        case 'before':
+          $replace = $matches[1][$key] . $tweet . $inner_html . $matches[3][$key];
+          break;
+        
+        case 'after':
+          $replace = $matches[1][$key] . $inner_html . $tweet . $matches[3][$key];
+          break;
+      }
+      $source = str_replace($matches[0][$key], $replace, $source);
+    }
+  }
 }

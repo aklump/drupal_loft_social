@@ -149,3 +149,12 @@ function hook_loft_social_url_default_alter(&$default) {
     $default = 'node/' . $node->nid;
   }
 }
+
+/**
+ * Implements hook_loft_social_get_name_alter().
+ */
+function hook_loft_social_get_name_alter(&$name, $social_key) {
+  if ($social_key === 'twitter') {
+    $name = 'intheloftweb';
+  }  
+}
