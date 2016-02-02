@@ -56,6 +56,8 @@ function hook_loft_social_prepare(&$mixed, $context) {
  * @param  array $build The renderable array
  * @param  array $context 
  *   - type: fb_like, tweet
+ *   - service_id string
+ *   - ... (other keys dependent upon type)
  */
 function hook_loft_social_button_alter(&$build, $context) {
   switch ($context['type']) {
@@ -148,6 +150,15 @@ function hook_loft_social_url_default_alter(&$default) {
   if ($node && ($node = my_module_get_target_node($node)) && !empty($node->nid)) {
     $default = 'node/' . $node->nid;
   }
+}
+
+/**
+ * Implements hook_loft_social_url_alter().
+ *
+ * This allows you to alter the url at the end of loft_social_url().
+ */
+function hook_loft_social_url_alter(&$url) {
+
 }
 
 /**

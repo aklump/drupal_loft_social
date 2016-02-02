@@ -478,6 +478,8 @@ function loft_social_url($path = NULL) {
       $url = str_replace('https://', 'http://', (string) $url);
     }
 
+    drupal_alter('loft_social_url', $url);
+
     $urls[$path] = $url;
   }
 
@@ -621,9 +623,12 @@ function loft_social_fb_share_renderable($url = NULL, $attributes = array()) {
  * @see  drupal_html_to_text().
  */
 function loft_social_mailto_renderable($message, $context = array(), $options = array()) {
+
+  // This will prevent us from sending this though loft_social_url 2x.
+  $base_url = empty($context['url']) ? loft_social_url() : $context['url'];
   $context += array(
     'subject' => NULL,
-    'url' => loft_social_url(),
+    'url' => $base_url,
   );
 
   $options += array(
@@ -650,7 +655,7 @@ function loft_social_mailto_renderable($message, $context = array(), $options = 
       '!site_name' => preg_replace('/https?:\/\//', '', loft_social_base_url()),
       '!subject' => $context['subject'],
       '!message' => strip_tags($message),
-      '!url' => loft_social_url($context['url']),
+      '!url' => $context['url'],
     ),
   ), $context);
 
@@ -667,6 +672,14 @@ function loft_social_mailto_renderable($message, $context = array(), $options = 
     ), 
     '#value' => t('Email'),
   );
+
+  $context = array(
+    'type' => 'mailto',
+    'service_id' => 'email',
+    'query' => $query,
+    'message' => $context,
+  );
+  drupal_alter('loft_social_button', $build, $context);
 
   return $build;
 }
