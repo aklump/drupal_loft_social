@@ -71,7 +71,7 @@
   };
 
   Drupal.behaviors.loftSocial = {};
-  Drupal.behaviors.loftSocial.attach = function (context, settings) {
+  Drupal.behaviors.loftSocial.attach = function () {
     $('.loft-social-is-popup-ready').each(function() {
       var _ = this;
       $(_).removeClass('loft-social-is-popup-ready');

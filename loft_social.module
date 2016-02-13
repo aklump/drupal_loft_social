@@ -776,11 +776,7 @@ function loft_social_tweet_link($url = NULL, $text = NULL, $context = array()) {
       ),
     ),
   );
-
-  $build['#attached']['js'][] =  array(
-    'type' => 'file', 
-    'data' => drupal_get_path('module', 'loft_social') . '/loft_social.js',
-  );
+  $build['#attached']['library'][] = array('loft_social', 'social');
 
   $context += array('type' => 'tweet_link', 'service_id' => $service_id);
   drupal_alter('loft_social_button', $build, $context);
@@ -1069,6 +1065,36 @@ function loft_social_init() {
 }
 
 /**
+ * Implements hook_library().
+ */
+function loft_social_library() {
+  $js_ext = '.min.js';
+  if (function_exists('loft_deploy_site_role')
+    && ($role = loft_deploy_site_role())
+    && $role !== 'prod'
+  ) {
+    $js_ext = '.js';
+  }
+  $module_js_dir = drupal_get_path('module', 'loft_social');
+
+  return array(
+    'social' => array(
+      'title'   => 'Loft Social',
+      'version' => '1.0',
+      'js'  => array(
+        $module_js_dir . '/loft_social' . $js_ext => array(),
+      ),
+      'css' => array(
+        drupal_get_path('module', 'loft_social') . '/loft_social.css' => array(
+          'type'  => 'file',
+          'media' => 'screen',
+        ),
+      ),
+    ),
+  );
+}
+
+/**
  * Implements hook_social_metatag_metatags_view_alter().
  */
 function loft_social_metatag_metatags_view_alter(&$output, $instance) {
@@ -1314,8 +1340,8 @@ function _loft_social_links_array($url = NULL) {
       'class' => array('loft-social-links'),
     ),
     '#attached' => array(
-      'css' => array(
-        drupal_get_path('module', 'loft_social') . '/loft_social.css' => array(),
+      'library' => array(
+        array('loft_social', 'social'),
       ),
     ),
   );
