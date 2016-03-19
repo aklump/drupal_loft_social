@@ -1712,6 +1712,9 @@ class SocialTweetFilter {
 
     preg_match_all("/(<{$tag}.*?>)(.+)(<\/{$tag}>)/", $source, $matches);
     foreach ($matches[2] as $key => $inner_html) {
+      if (strpos($inner_html, "<{$tag}>") !== FALSE) {
+        throw new \InvalidArgumentException("Unclosed or nested <{$tag}> elements would cause recursion.");
+      }
       $tweet = strip_tags($inner_html);
       $build = $type_function(NULL, $tweet);
       
