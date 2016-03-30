@@ -19,6 +19,12 @@ define('LOFT_SOCIAL_BLOCK_COUNT_WEBSITE', 0);
 define('LOFT_SOCIAL_OG_IMAGE_STYLE', 'loft_social_og_image_400x');
 define('LOFT_SOCIAL_OG_IMAGE_MIN', '200x200');
 define('LOFT_SOCIAL_OG_IMAGE_CT_MAX', 3);
+/**
+ * @var LOFT_SOCIAL_REALTIME_METATAGS_QUERY_KEY
+ *
+ * This key is used to indicate a realtime metatag nid.
+ */
+define('LOFT_SOCIAL_REALTIME_METATAGS_QUERY_KEY', 'metanid');
 
 /**
  * @var LOFT_SOCIAL_TWEET_MAX_CHARS
@@ -43,12 +49,12 @@ define('LOFT_SOCIAL_PAGES', $pages);
  * Implements hook_permission().
  */
 function loft_social_permission() {
- return array(
-   'loft_social:administer' => array(
-     'title' => t('Administer Facebook Social Loft Extras'),
-     'description' => t('Perform administration tasks for Facebook Social Loft Extras.'),
-   ),
- );
+  return array(
+    'loft_social:administer' => array(
+      'title'       => t('Administer Facebook Social Loft Extras'),
+      'description' => t('Perform administration tasks for Facebook Social Loft Extras.'),
+    ),
+  );
 }
 
 /**
@@ -116,13 +122,13 @@ function loft_social_menu() {
   $items = array();
 
   $items[LOFT_SOCIAL_URL_SETTINGS] = array(
-   'title' => 'Loft Social Manager',
-   'description' => 'Administer module configuration settings',
-   'page callback' => 'drupal_get_form',
-   'page arguments' => array('loft_social_settings'),
-   'file' => 'includes/loft_social.admin.inc',
-   'access arguments' => array('loft_social:administer'),
-   'type' => MENU_NORMAL_ITEM,
+    'title'            => 'Loft Social Manager',
+    'description'      => 'Administer module configuration settings',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('loft_social_settings'),
+    'file'             => 'includes/loft_social.admin.inc',
+    'access arguments' => array('loft_social:administer'),
+    'type'             => MENU_NORMAL_ITEM,
   );
 
   return $items;
@@ -130,7 +136,7 @@ function loft_social_menu() {
 
 function _loft_social_settings_snippet() {
   $keys = array(
-    'fb_social_base_url', 
+    'fb_social_base_url',
     'fb_social_urls_mode',
     'on_the_web_twitter_page',
     'on_the_web_facebook_page',
@@ -153,7 +159,8 @@ function _loft_social_settings_snippet() {
 function loft_social_form_ctools_export_ui_edit_item_form_alter(&$form, $form_state, $form_id) {
   if (!empty($form['info']['name']['#value'])
     && ($id = $form['info']['name']['#value'])
-    && $id === variable_get('loft_social_fb_preset_like', '')) {
+    && $id === variable_get('loft_social_fb_preset_like', '')
+  ) {
     $form['fb_social_settings_like']['settings_like']['#collapsed'] = TRUE;
   }
 
@@ -190,7 +197,7 @@ function loft_social_form_shorten_admin_alter(&$form, $form_state, $form_id) {
  * Implements hook_form_alter().
  */
 function loft_social_form_metatag_config_edit_form_alter(&$form, $form_state, $form_id) {
-  
+
   // Cycle through and lock fields
   $groups = array('advanced', 'open-graph');
   foreach ($groups as $group) {
@@ -199,7 +206,8 @@ function loft_social_form_metatag_config_edit_form_alter(&$form, $form_state, $f
 
       // Special handling for image
       if (in_array($field, array('og:image', 'image_src'))
-        && !loft_social_og_image_uri()) {
+        && !loft_social_og_image_uri()
+      ) {
         continue;
       }
 
@@ -208,7 +216,7 @@ function loft_social_form_metatag_config_edit_form_alter(&$form, $form_state, $f
       if (array_key_exists($field, $item)) {
         $item[$field]['value']['#disabled'] = TRUE;
         $item[$field]['value']['#description'] = t('This field is locked and managed by <a href="!url">Loft Social Manager</a>.', array(
-          '!url' => url(LOFT_SOCIAL_URL_SETTINGS), 
+          '!url' => url(LOFT_SOCIAL_URL_SETTINGS),
         ));
       }
     }
@@ -222,13 +230,13 @@ function loft_social_form_fb_social_admin_settings_form_alter(&$form, $form_stat
   // If we have not yet set this variable then we want to force the unaliased
   // version, also if it is set and not equal to 1 then we need to show the
   // other options or it gets confusing.
-  if (variable_get('fb_social_urls_mode', 1) == 1)  {
+  if (variable_get('fb_social_urls_mode', 1) == 1) {
     $form['fb_social_urls']['fb_social_urls_mode']['#default_value'] = 1;
     $form['fb_social_urls']['fb_social_urls_mode']['#description'] = t("<em>Options have been removed by Facebook Social Loft Extras.</em>");
     $form['fb_social_urls']['fb_social_urls_mode']['#options'] = array_intersect_key($form['fb_social_urls']['fb_social_urls_mode']['#options'], array(1 => 1));
   }
-  
-  $form['#validate'][] = 'loft_social_form_fb_social_admin_settings_form_validate'; 
+
+  $form['#validate'][] = 'loft_social_form_fb_social_admin_settings_form_validate';
   $form['#submit'][] = 'loft_social_form_fb_social_admin_settings_form_submit';
 }
 
@@ -242,7 +250,7 @@ function loft_social_form_fb_social_admin_settings_form_validate($form, &$form_s
   if (strstr($url, 'https://')) {
     $url = str_replace('https://', 'http://', $url);
     drupal_set_message(t("For improved compatiblity we've removed the <em>https</em> from %url.", array(
-      '%url' => $url, 
+      '%url' => $url,
     )), 'warning', FALSE);
   }
 
@@ -285,6 +293,7 @@ function loft_social_base_url($part = NULL) {
   if ($part !== NULL) {
     return parse_url($url, $part);
   }
+
   return $url;
 }
 
@@ -292,14 +301,16 @@ function loft_social_base_url($part = NULL) {
  * Return the url to the og:image default
  *
  * @param  boolean $published Do you wnat the published url or the url for this
- * server?  This should be FALSE if you want to display the image, and TRUE if
- * you're setting a metatag.    
+ *                            server?  This should be FALSE if you want to
+ *                            display the image, and TRUE if you're setting a
+ *                            metatag.
  *
  * @return string
  */
 function loft_social_og_image_uri($published = TRUE) {
   if (!($fid = variable_get('loft_social_og_image', NULL))
-    || !($file = file_load($fid))) {
+    || !($file = file_load($fid))
+  ) {
     return '';
   }
   $uri = $file->uri;
@@ -310,7 +321,7 @@ function loft_social_og_image_uri($published = TRUE) {
   else {
     $url = file_create_url($uri);
   }
-  
+
   if ($published && ($base = loft_social_base_url())) {
     $parsed = parse_url($url);
     $url = rtrim($base, '/') . $parsed['path'] . '?' . $parsed['query'];
@@ -346,7 +357,7 @@ function loft_social_og_site_name() {
  */
 function _loft_social_metatag_locked_fields($instance_id = NULL) {
   $fields = array(
-    'global' => array(
+    'global'           => array(
       'canonical',
       'og:url',
       'image_src',
@@ -381,30 +392,29 @@ function loft_social_metatag_config_presave($config, $conf = NULL) {
   // Be sure to add to _loft_social_metatag_locked_fields() as well!!!
   switch ($config->instance) {
     case 'global':
-      $config->config['canonical']['value']   = 'http://[current-page:url:brief]';
-      $config->config['og:url']['value']      = 'http://[current-page:url:brief]';
-      $config->config['shortlink']['value']   = 'http://[current-page:url:unaliased:brief]';
+      $config->config['canonical']['value'] = 'http://[current-page:url:brief]';
+      $config->config['og:url']['value'] = 'http://[current-page:url:brief]';
+      $config->config['shortlink']['value'] = 'http://[current-page:url:unaliased:brief]';
       if ($url = loft_social_og_image_uri()) {
         $config->config['image_src']['value'] = $url;
-        $config->config['og:image']['value']  = $url;
+        $config->config['og:image']['value'] = $url;
       }
       break;
 
     case 'global:frontpage':
       $config->config['canonical']['value'] = $conf['fb_social_base_url'];
-      $config->config['og:url']['value']    = $conf['fb_social_base_url'];
+      $config->config['og:url']['value'] = $conf['fb_social_base_url'];
       $config->config['shortlink']['value'] = $conf['fb_social_base_url'];
       break;
   }
 
   if ($config != $changed && user_access('administer meta tags')) {
     drupal_set_message(t("One or more locked <a href='!url'>%type metatag(s)</a> have been overwritten by Facebook Social Loft Extras.", array(
-      '!url' => url(LOFT_SOCIAL_URL_OG_SETTINGS), 
-      '%type' => metatag_config_instance_label($config->instance), 
+      '!url'  => url(LOFT_SOCIAL_URL_OG_SETTINGS),
+      '%type' => metatag_config_instance_label($config->instance),
     )), 'warning', FALSE);
   }
 
-  
 
   // These fields will only be set if they are empty; they can be overridden
   // by an admin.
@@ -422,13 +432,13 @@ function loft_social_metatag_config_presave($config, $conf = NULL) {
       $config->config['description']['value'] = empty($config->config['description']['value']) ? '[site:slogan]' : $config->config['description']['value'];
       $config->config['og:type']['value'] = empty($config->config['og:type']['value']) ? 'website' : $config->config['og:type']['value'];
       break;
-  }  
-  
+  }
+
 
   if ($config != $changed && user_access('administer meta tags')) {
     drupal_set_message(t("Some default value(s) for <a href='!url'>%type metatags</a> have been provided by Facebook Social Loft Extras you may want <a href='!url'>to review</a>.", array(
-      '!url' => url(LOFT_SOCIAL_URL_OG_SETTINGS), 
-      '%type' => metatag_config_instance_label($config->instance), 
+      '!url'  => url(LOFT_SOCIAL_URL_OG_SETTINGS),
+      '%type' => metatag_config_instance_label($config->instance),
     )), 'warning', FALSE);
   }
 }
@@ -462,14 +472,14 @@ function loft_social_url($path = NULL) {
     $url_args = array(
       'absolute' => TRUE,
       // By default set this to true so it doesn't get aliased.
-      'alias' => variable_get('fb_social_urls_mode', 1),
-      'base_url' => loft_social_base_url()
+      'alias'    => variable_get('fb_social_urls_mode', 1),
+      'base_url' => loft_social_base_url(),
     );
 
     // The facebook module will return an unaliased, absolute url for us.
     if (!module_exists('fb_social') || !($url = fb_social_url($path))) {
       $path = drupal_get_normal_path($path);
-      $url  = url($path, $url_args);  
+      $url = url($path, $url_args);
     }
 
     // At this point, url is absolute and we'll make sure it's http.
@@ -491,7 +501,7 @@ function loft_social_url($path = NULL) {
  * Returns render array for a global like button (for homepage)
  *
  * @param  string $url (Optional) Defaults to NULL.  If omitted the current
- * page url will be used, otherwise this url will be used.
+ *                     page url will be used, otherwise this url will be used.
  *
  * @return  array A renderable array.
  */
@@ -503,7 +513,7 @@ function loft_social_fb_like_button($url = NULL) {
     $preset->fb_attrs['href'] = $url;
     $build = array(
       '#markup' => fb_social_preset_view($preset),
-    );  
+    );
   }
 
   $context = array('type' => 'fb_like', 'service_id' => 'facebook');
@@ -520,14 +530,15 @@ function loft_social_fb_like_button($url = NULL) {
 function _loft_social_fb_preset() {
   // Alert admins to create one fb like preset...
   if (!($preset = variable_get('loft_social_fb_preset_like', ''))
-    && user_access('loft_social:administer')) {
+    && user_access('loft_social:administer')
+  ) {
     drupal_set_message(t('Please <a href="!url">create</a> at least one Facebook like preset and <a href="!url2">define it in your settings</a>.', array(
-      '!url' => url(LOFT_SOCIAL_URL_FB_PRESETS . '/add', array(
+      '!url'  => url(LOFT_SOCIAL_URL_FB_PRESETS . '/add', array(
         'query' => array(
-          'destination' => url(LOFT_SOCIAL_URL_SETTINGS)
+          'destination' => url(LOFT_SOCIAL_URL_SETTINGS),
         ),
-      )), 
-      '!url2' => url(LOFT_SOCIAL_URL_SETTINGS), 
+      )),
+      '!url2' => url(LOFT_SOCIAL_URL_SETTINGS),
     )), 'error', FALSE);
   }
   else {
@@ -542,11 +553,12 @@ function _loft_social_fb_preset() {
  * Returns an array suitable for url() for sharing an url.
  *
  * @param  string $redirect_uri Where the user goes after sharing.  Be aware
- *   that this must be allowed in the application urls, or same domain.  This
- *   will be made absolute via url().
- * @param  string $url (Optional.)
+ *                              that this must be allowed in the application
+ *                              urls, or same domain.  This will be made
+ *                              absolute via url().
+ * @param  string $url          (Optional.)
  *
- * @return array      
+ * @return array
  *   - path string
  *   - options array
  *     - attributes array
@@ -558,13 +570,13 @@ function loft_social_fb_share_link($redirect_uri, $url = NULL) {
   $url = loft_social_url($url);
   $redirect_uri = loft_social_url($redirect_uri);
   $link = array(
-    'path' => 'https://www.facebook.com/dialog/share',
+    'path'    => 'https://www.facebook.com/dialog/share',
     'options' => array(
       'attributes' => array(),
-      'query' => array(
-        'app_id' => variable_get('fb_social_appid', ''),
-        'display' => 'popup',
-        'href' => $url,
+      'query'      => array(
+        'app_id'       => variable_get('fb_social_appid', ''),
+        'display'      => 'popup',
+        'href'         => $url,
         'redirect_uri' => $redirect_uri,
       ),
     ),
@@ -579,27 +591,27 @@ function loft_social_fb_share_link($redirect_uri, $url = NULL) {
 /**
  * Return a renderable item for a share button.
  *
- * @param  string $url        Optional. Defaults to current.
+ * @param  string $url Optional. Defaults to current.
  * @param  array  $attributes
- *   - data-width
- *   - data-layout
+ *                     - data-width
+ *                     - data-layout
  *
  * @return array
  */
 function loft_social_fb_share_renderable($url = NULL, $attributes = array()) {
   $url = loft_social_url($url);
   $attributes += array(
-    'class' => array(),
+    'class'     => array(),
     'data-href' => $url,
     'data-type' => 'button',
   );
   $attributes['class'][] = 'fb-share-button';
   $build = array(
-    '#theme' => 'html_tag', 
-    '#tag' => 'div', 
-    '#attributes' => $attributes, 
+    '#theme'      => 'html_tag',
+    '#tag'        => 'div',
+    '#attributes' => $attributes,
   );
-  
+
   $context += array('type' => 'fb_share', 'service_id' => 'facebook');
   drupal_alter('loft_social_button', $build, $context);
 
@@ -610,14 +622,15 @@ function loft_social_fb_share_renderable($url = NULL, $attributes = array()) {
  * Return a renderable array for a mailto link.
  *
  * @param  string $message
- * @param  array $context
- *   - subject string The mailto subject.
- *   - subject_base
- *   - message_base Teh mailto message.
- *   - t array t() arguments for the other context strings.
- * @param  array options
- *   - string callback Defaults to drupal_html_to_text().
- *   - array callback_args Args to send to the callback function.
+ * @param  array  $context
+ *                      - subject string The mailto subject.
+ *                      - subject_base
+ *                      - message_base Teh mailto message.
+ *                      - t array t() arguments for the other context strings.
+ * @param         array options
+ *                      - string callback Defaults to drupal_html_to_text().
+ *                      - array callback_args Args to send to the callback
+ *                      function.
  *
  * @return array Suitable for drupal_render().
  *
@@ -629,11 +642,11 @@ function loft_social_mailto_renderable($message, $context = array(), $options = 
   $base_url = empty($context['url']) ? loft_social_url() : $context['url'];
   $context += array(
     'subject' => NULL,
-    'url' => $base_url,
+    'url'     => $base_url,
   );
 
   $options += array(
-    'callback' => 'drupal_html_to_text',
+    'callback'      => 'drupal_html_to_text',
     'callback_args' => array(),
   );
 
@@ -647,16 +660,16 @@ function loft_social_mailto_renderable($message, $context = array(), $options = 
   // which would screw up the subject, e.g., Marie&#039;s Dictionary.
   if (!isset($context['subject']) && function_exists('menu_get_active_title')) {
     $context['subject'] = menu_get_active_title();
-  }  
+  }
 
   $context = drupal_array_merge_deep(array(
     'subject_base' => 'From !site_name: !subject',
     'message_base' => "!message\nContinue reading at !url",
-    't' => array(
+    't'            => array(
       '!site_name' => preg_replace('/https?:\/\//', '', loft_social_base_url()),
-      '!subject' => $context['subject'],
-      '!message' => strip_tags($message),
-      '!url' => $context['url'],
+      '!subject'   => $context['subject'],
+      '!message'   => strip_tags($message),
+      '!url'       => $context['url'],
     ),
   ), $context);
 
@@ -664,21 +677,21 @@ function loft_social_mailto_renderable($message, $context = array(), $options = 
   $query['body'] = t($context['message_base'], $context['t']);
 
   $build = array(
-    '#theme' => 'html_tag', 
-    '#tag' => 'a', 
+    '#theme'      => 'html_tag',
+    '#tag'        => 'a',
     '#attributes' => array(
-      'href' => 'mailto:?' . drupal_http_build_query($query),
+      'href'  => 'mailto:?' . drupal_http_build_query($query),
       'title' => t('Email'),
-      'class' => array('loft-social-mailto')
-    ), 
-    '#value' => t('Email'),
+      'class' => array('loft-social-mailto'),
+    ),
+    '#value'      => t('Email'),
   );
 
   $context = array(
-    'type' => 'mailto',
+    'type'       => 'mailto',
     'service_id' => 'email',
-    'query' => $query,
-    'message' => $context,
+    'query'      => $query,
+    'message'    => $context,
   );
   drupal_alter('loft_social_button', $build, $context);
 
@@ -690,7 +703,7 @@ function loft_social_mailto_renderable($message, $context = array(), $options = 
  *
  * @param   string $social_key
  * - one of: twitter, facebook
- *     
+ *
  * @return object
  * - name
  *
@@ -710,7 +723,7 @@ function loft_social_get_name($social_key) {
     switch ($social_key) {
       case 'google':
         if (preg_match('/https?:\/\/plus\.google\.com\/(.*?)\/posts/i', $url, $matches)) {
-          $names[$social_key] = $matches[1];  
+          $names[$social_key] = $matches[1];
         }
         break;
       case 'youtube':
@@ -724,7 +737,7 @@ function loft_social_get_name($social_key) {
     }
     drupal_alter('loft_social_get_name', $names[$social_key], $social_key);
   }
-  
+
   return $names[$social_key];
 }
 
@@ -732,11 +745,12 @@ function loft_social_get_name($social_key) {
  * Returns a renderable array for a tweet link for the current page.
  *
  * @param string $url
- *   (Optional) Defaults to NULL.  If omitted the current page url will be used,
+ *   (Optional) Defaults to NULL.  If omitted the current page url will be
+ *   used,
  *   otherwise this url will be used.
  * @param string $text
  *   Optional, if empty the node title or page title will be used.
- * @param array $context
+ * @param array  $context
  *   This will be passed to loft_social_button_alter, be careful not to clobber
  *   the key 'type' by accident.
  *
@@ -747,7 +761,7 @@ function loft_social_get_name($social_key) {
 function loft_social_tweet_link($url = NULL, $text = NULL, $context = array()) {
   global $is_https;
   $http_protocol = $is_https ? 'https' : 'http';
-  $service_id    = 'twitter';
+  $service_id = 'twitter';
   list($twitter_name, $tiny, $text, $language, $length, $remaining) = _loft_social_preprocess_tweet($url, $text);
 
   if (!($twitter_name)) {
@@ -755,24 +769,24 @@ function loft_social_tweet_link($url = NULL, $text = NULL, $context = array()) {
   }
 
   $build = array(
-    '#loft_social_tweet_length' => $length,
+    '#loft_social_tweet_length'    => $length,
     '#loft_social_tweet_remaining' => $remaining,
-    '#theme' => 'link', 
-    '#text' => t('Tweet'),
-    '#path' => $http_protocol . '://twitter.com/share',
-    '#options' => array(
+    '#theme'                       => 'link',
+    '#text'                        => t('Tweet'),
+    '#path'                        => $http_protocol . '://twitter.com/share',
+    '#options'                     => array(
       'attributes' => array(
-        'class' => array(
+        'class'                    => array(
           'loft-social-tweet-link',
           'loft-social-is-popup-ready',
         ),
         'data-loft-social-service' => $service_id,
-        'data-loft-social-title' => t('Tweet'),
+        'data-loft-social-title'   => t('Tweet'),
       ),
-      'query' => array(
+      'query'      => array(
         'text' => $text,
-        'url' => $tiny,
-        'via' => $twitter_name,
+        'url'  => $tiny,
+        'via'  => $twitter_name,
         'tw_p' => 'tweetbutton',
       ),
     ),
@@ -792,7 +806,8 @@ function loft_social_tweet_link($url = NULL, $text = NULL, $context = array()) {
  * @see loft_social_tweet_button().
  *
  * @code
- *   list($twitter_name, $tiny, $text, $language, $length, $remaining) = _loft_social_preprocess_tweet($text, $url);
+ *   list($twitter_name, $tiny, $text, $language, $length, $remaining) =
+ *   _loft_social_preprocess_tweet($text, $url);
  * @endcode
  */
 function _loft_social_preprocess_tweet($url = NULL, $text = NULL) {
@@ -825,7 +840,7 @@ function _loft_social_preprocess_tweet($url = NULL, $text = NULL) {
  *   otherwise this url will be used.
  * @param string $text
  *   Optional, if empty the node title or page title will be used.
- * @param array $context
+ * @param array  $context
  *   This will be passed to loft_social_button_alter, be careful not to clobber
  *   the key 'type' by accident.
  *
@@ -837,7 +852,7 @@ function _loft_social_preprocess_tweet($url = NULL, $text = NULL) {
 function loft_social_tweet_button($url = NULL, $text = NULL, $context = array()) {
   global $is_https;
   $http_protocol = $is_https ? 'https' : 'http';
-  $service_id    = 'twitter';
+  $service_id = 'twitter';
   list($twitter_name, $tiny, $text, $language, $length, $remaining) = _loft_social_preprocess_tweet($url, $text);
 
   if (!($twitter_name)) {
@@ -845,43 +860,43 @@ function loft_social_tweet_button($url = NULL, $text = NULL, $context = array())
   }
 
   $twitter = array(
-    'class' => array('twitter-share-button'),
-    'href' => $http_protocol . '://twitter.com/share',
+    'class'         => array('twitter-share-button'),
+    'href'          => $http_protocol . '://twitter.com/share',
     // 'data-size' => 'large',
-    'data-text' => $text,
-    'data-url' => $tiny,
+    'data-text'     => $text,
+    'data-url'      => $tiny,
     // 'data-hashtags' => '',
-    'data-via' => $twitter_name,
+    'data-via'      => $twitter_name,
     // 'data-related' => '',
     'data-counturl' => $url,
-    'data-lang' => $language,
+    'data-lang'     => $language,
   );
 
   $build = array(
-    '#type' => 'html_tag',
-    '#tag' => 'a',
-    '#value' => 'Tweet',
-    '#attributes' => $twitter,
-    '#suffix' => '</a>',
-    '#loft_social_tweet_length' => $length,
+    '#type'                        => 'html_tag',
+    '#tag'                         => 'a',
+    '#value'                       => 'Tweet',
+    '#attributes'                  => $twitter,
+    '#suffix'                      => '</a>',
+    '#loft_social_tweet_length'    => $length,
     '#loft_social_tweet_remaining' => $remaining,
-    '#attached' => array(
+    '#attached'                    => array(
       'js' => array(
         array(
           'data' => '!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");',
           'type' => 'inline',
-        )
+        ),
       ),
     ),
-    '#post_render' => array(
-      'loft_social_post_render_meta_tags'
+    '#post_render'                 => array(
+      'loft_social_post_render_meta_tags',
     ),
-    '#loft_social_metatags' => array(
+    '#loft_social_metatags'        => array(
       '#service' => 'twitter',
       array(
-        'name' => 'twitter:widgets:csp', 
-        'content' => 'on', 
-      )
+        'name'    => 'twitter:widgets:csp',
+        'content' => 'on',
+      ),
     ),
   );
 
@@ -895,7 +910,7 @@ function loft_social_tweet_button($url = NULL, $text = NULL, $context = array())
  * Add metatags to an element using #loft_social_metataga.
  *
  * @param  string $markup  The rendered output
- * @param  array $element The renderable array
+ * @param  array  $element The renderable array
  *
  * @return  string
  *   The altered markup.
@@ -910,9 +925,9 @@ function loft_social_post_render_meta_tags($markup, $element) {
   foreach (element_children($element['#loft_social_metatags']) as $child) {
     $attributes = $element['#loft_social_metatags'][$child];
     drupal_add_html_head(array(
-      '#type' => 'html_tag', 
-      '#tag' => 'meta', 
-      '#attributes' => $attributes, 
+      '#type'       => 'html_tag',
+      '#tag'        => 'meta',
+      '#attributes' => $attributes,
     ), $element['#loft_social_metatags']['#service'] . '_' . implode('_', $attributes));
   }
 
@@ -922,9 +937,9 @@ function loft_social_post_render_meta_tags($markup, $element) {
 /**
  *  Get short url of current page
  *
- *  @param string $url
+ * @param string $url
  *
- *  @return string $url
+ * @return string $url
  */
 function loft_social_shorten_url($url) {
   return $url;
@@ -968,19 +983,19 @@ function loft_social_shorten_url($url) {
  */
 function loft_social_block_info() {
   $blocks = array();
-  for ($i = 0; $i < variable_get('loft_social_block_count', LOFT_SOCIAL_BLOCK_COUNT); $i++) { 
+  for ($i = 0; $i < variable_get('loft_social_block_count', LOFT_SOCIAL_BLOCK_COUNT); $i++) {
     $blocks['page:' . $i] = array(
-      'info' => t('Social Links Current Page (@index)', array('@index' => $i + 1)), 
+      'info'  => t('Social Links Current Page (@index)', array('@index' => $i + 1)),
       'cache' => DRUPAL_CACHE_PER_PAGE,
     );
   }
-  for ($i = 0; $i < variable_get('loft_social_block_count_website', LOFT_SOCIAL_BLOCK_COUNT_WEBSITE); $i++) { 
+  for ($i = 0; $i < variable_get('loft_social_block_count_website', LOFT_SOCIAL_BLOCK_COUNT_WEBSITE); $i++) {
     $blocks['website:' . $i] = array(
-      'info' => t('Social Links to Homepage (@index)', array('@index' => $i + 1)), 
+      'info'  => t('Social Links to Homepage (@index)', array('@index' => $i + 1)),
       'cache' => DRUPAL_CACHE_GLOBAL,
     );
   }
-  
+
   return $blocks;
 }
 
@@ -992,7 +1007,7 @@ function loft_social_block_view($delta = '') {
   list($delta) = explode(':', $delta);
   switch ($delta) {
     case 'page':
-      $block['content'] = _loft_social_links_array();     
+      $block['content'] = _loft_social_links_array();
       break;
 
     case 'website':
@@ -1020,9 +1035,9 @@ function loft_social_field_extra_fields_alter(&$info) {
   if (variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT) == 4) {
     foreach (node_type_get_types() as $bundle) {
       $info['node'][$bundle->type]['display']['loft_social'] = array(
-        'label' => t('Social Links'), 
-        'description' => t('As provided by Loft Social Manager'), 
-        'weight' => 0,
+        'label'       => t('Social Links'),
+        'description' => t('As provided by Loft Social Manager'),
+        'weight'      => 0,
         //'edit' => l('edit', url(LOFT_SOCIAL_URL_SETTINGS)), 
       );
     }
@@ -1042,7 +1057,7 @@ function loft_social_node_view_alter(&$build) {
       $links = _loft_social_links_array();
       $build['links'] += $links['links'];
       break;
-    
+
     case 4:
       $build['loft_social'] = _loft_social_links_array();
       break;
@@ -1054,13 +1069,17 @@ function loft_social_node_view_alter(&$build) {
  */
 function loft_social_init() {
   global $_fb_script_init, $_loft_social_page_placement_;
-  if (in_array(variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT), array(1, 2))
-    && loft_social_show_on_page()) {
+  if (in_array(variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT), array(
+      1,
+      2,
+    ))
+    && loft_social_show_on_page()
+  ) {
 
     // Flag our fb_share module to install the necessary js when we are placing
     // in the page, the reason is that we place in preprocess_page which comes
     // AFTER the fb_share modules page_alter, so we have to prep it here.
-    $_fb_script_init = TRUE;    
+    $_fb_script_init = TRUE;
     $_loft_social_page_placement_ = TRUE;
   }
 }
@@ -1082,10 +1101,10 @@ function loft_social_library() {
     'social' => array(
       'title'   => 'Loft Social',
       'version' => '1.0',
-      'js'  => array(
+      'js'      => array(
         $module_js_dir . '/loft_social' . $js_ext => array(),
       ),
-      'css' => array(
+      'css'     => array(
         drupal_get_path('module', 'loft_social') . '/loft_social.css' => array(
           'type'  => 'file',
           'media' => 'screen',
@@ -1101,11 +1120,11 @@ function loft_social_library() {
 function loft_social_metatag_metatags_view_alter(&$output, $instance) {
 
   $context = array(
-    'path' => ($path = drupal_get_normal_path(current_path())), 
-    'node' => menu_get_object('node', 1, $path), 
-    'instance' => $instance, 
-    'style' => variable_get('loft_social_og_image_style', LOFT_SOCIAL_OG_IMAGE_STYLE), 
-  );  
+    'path'     => ($path = drupal_get_normal_path(current_path())),
+    'node'     => menu_get_object('node', 1, $path),
+    'instance' => $instance,
+    'style'    => variable_get('loft_social_og_image_style', LOFT_SOCIAL_OG_IMAGE_STYLE),
+  );
 
   // We are going to go through and allow other modules to increase the
   // number of of:image tags from 1 to N using hook_loft_social_page_images_alter().
@@ -1130,7 +1149,10 @@ function loft_social_metatag_metatags_view_alter(&$output, $instance) {
   $weight = 0;
 
   $tallies = array(
-    'og:image' => array(0, variable_get('loft_social_og_image_ct_max', LOFT_SOCIAL_OG_IMAGE_CT_MAX)),
+    'og:image' => array(
+      0,
+      variable_get('loft_social_og_image_ct_max', LOFT_SOCIAL_OG_IMAGE_CT_MAX),
+    ),
   );
   $urls = array();
   foreach ($files as $key => $url) {
@@ -1139,7 +1161,7 @@ function loft_social_metatag_metatags_view_alter(&$output, $instance) {
         $urls[] = image_style_url($context['style'], $url['uri']);
       }
       else {
-        $urls[] = file_create_url($url['uri']);  
+        $urls[] = file_create_url($url['uri']);
       }
     }
   }
@@ -1157,12 +1179,12 @@ function loft_social_metatag_metatags_view_alter(&$output, $instance) {
       if (function_exists('theme_metatag_opengraph')) {
         $element[] = array(
           array(
-            '#theme' => 'metatag_opengraph', 
-            '#tag' => 'meta', 
-            '#id' => $id, 
-            '#name' => 'og:image', 
-            '#value' => $url, 
-            '#weight' => $weight++, 
+            '#theme'  => 'metatag_opengraph',
+            '#tag'    => 'meta',
+            '#id'     => $id,
+            '#name'   => 'og:image',
+            '#value'  => $url,
+            '#weight' => $weight++,
           ),
           $id,
         );
@@ -1170,12 +1192,12 @@ function loft_social_metatag_metatags_view_alter(&$output, $instance) {
       else {
         $element[] = array(
           array(
-            '#theme' => 'metatag_property',
-            '#tag' => 'meta', 
-            '#id' => $id, 
-            '#name' => 'og:image', 
-            '#value' => $url, 
-            '#weight' => $weight++, 
+            '#theme'  => 'metatag_property',
+            '#tag'    => 'meta',
+            '#id'     => $id,
+            '#name'   => 'og:image',
+            '#value'  => $url,
+            '#weight' => $weight++,
           ),
           $id,
         );
@@ -1198,17 +1220,17 @@ function loft_social_metatag_metatags_view_alter(&$output, $instance) {
  */
 function loft_social_show_on_page() {
   $context = array(
-    'url' => current_path(),
-    'access' => FALSE,
+    'url'        => current_path(),
+    'access'     => FALSE,
     'visibility' => variable_get('loft_social_page_visibility', BLOCK_VISIBILITY_NOTLISTED),
-    'pages' => variable_get('loft_social_pages', LOFT_SOCIAL_PAGES),   
+    'pages'      => variable_get('loft_social_pages', LOFT_SOCIAL_PAGES),
   );
 
   // Limited visibility blocks must list at least one page.
   if ($context['visibility'] == BLOCK_VISIBILITY_LISTED && empty($context['pages'])) {
     $context['access'] = FALSE;
   }
-   // Match path if necessary.
+  // Match path if necessary.
   elseif ($context['pages']) {
 
     // Convert path to lowercase. This allows comparison of the same path
@@ -1241,7 +1263,8 @@ function loft_social_show_on_page() {
 
   // Now decide if we have public path
   if ($context['visibility'] == BLOCK_VISIBILITY_NOTLISTED
-    && $context['access']) {
+    && $context['access']
+  ) {
 
     // If it's an admin path we'll not waste time with the user check.
     if (path_is_admin($context['url'])) {
@@ -1249,25 +1272,25 @@ function loft_social_show_on_page() {
     }
     else {
       // For non-admins we'll see if anonymous can see it...
-      
+
       // Prevent session information from being saved while doing funky stuff.
       drupal_save_session(FALSE);
-      
+
       // Force the current user to anonymous to ensure consistent permissions on
       // funky stuff runs.
       $original_user = $GLOBALS['user'];
       $GLOBALS['user'] = drupal_anonymous_user();
-      
+
       if ($router_item = menu_get_item($context['url'])) {
         $context['access'] = $router_item['access'];
       }
-      
+
       // Restore the user.
       $GLOBALS['user'] = $original_user;
-      drupal_save_session(TRUE);    
+      drupal_save_session(TRUE);
     }
   }
-  
+
   drupal_alter('loft_social_show_on_page', $context);
 
   return $context['access'];
@@ -1279,13 +1302,34 @@ function loft_social_show_on_page() {
 function loft_social_page_alter(&$page) {
   global $_fb_script_init;
   loft_social_prepare($_fb_script_init, __FUNCTION__, $page);
+
+  $key = variable_get('loft_social_realtime_metatags_query_key', LOFT_SOCIAL_REALTIME_METATAGS_QUERY_KEY);
+  if (!empty($_GET[$key])
+    && ($node = node_load($_GET[$key]))
+    && node_access('view', $node)
+  ) {
+    $metatag_region = variable_get('metatag_page_region', 'content');
+    $output = array();
+    if (isset($page[$metatag_region]['metatags'])){
+      reset($page[$metatag_region]['metatags']);
+      $metatag_key = key($page[$metatag_region]['metatags']);
+      $output = $page[$metatag_region]['metatags'][$metatag_key];
+    }
+
+    $context = array(
+      'path' => current_path(),
+      'node' => $node,
+    );
+    drupal_alter('loft_social_realtime_metatags', $output, $context);
+    $page[$metatag_region]['metatags'][$metatag_key] = $output;
+  }
 }
 
 /**
  * Implements hook_preprocess_page().
  */
 function loft_social_preprocess_page(&$vars) {
-  
+
   // We shouldn't show on 40x pages
   $headers = drupal_get_http_header();
   if (isset($headers['status']) && strpos($headers['status'], '40') === 0) {
@@ -1299,7 +1343,7 @@ function loft_social_preprocess_page(&$vars) {
         $vars['title_prefix']['loft_social'] = _loft_social_links_array();
         $vars['title_prefix']['loft_social']['links']['loft_social']['#attributes']['class'][] = 'title-prefix';
         break;
-      
+
       case 2:
         $vars['title_suffix']['loft_social'] = _loft_social_links_array();
         $vars['title_suffix']['loft_social']['links']['loft_social']['#attributes']['class'][] = 'title-suffix';
@@ -1312,15 +1356,15 @@ function loft_social_preprocess_page(&$vars) {
  * Returns a renderable array of all social link buttons provided by module.
  *
  * @param  string $url (Optional.) If not provided current page is used.
- *                         
+ *
  * @return array      A renderable array
  */
 function _loft_social_links_array($url = NULL) {
 
   // An array of keys and functions for adding links
   $social_links = array(
-    'loft-social-fb-like-button' => 'loft_social_fb_like_button', 
-    'loft-social-tweet-button' => 'loft_social_tweet_button', 
+    'loft-social-fb-like-button' => 'loft_social_fb_like_button',
+    'loft-social-tweet-button'   => 'loft_social_tweet_button',
   );
 
   $links = array();
@@ -1328,19 +1372,19 @@ function _loft_social_links_array($url = NULL) {
     if (function_exists($function) && ($renderable = $function($url))) {
       $links[$id] = array(
         'title' => drupal_render($renderable),
-        'html' => TRUE,
+        'html'  => TRUE,
       );
     }
   }
-  
+
   // Add an additional html snippet to as a link item
   $build['links']['loft_social'] = array(
-    '#theme' => 'links', 
-    '#links' => $links,
+    '#theme'      => 'links',
+    '#links'      => $links,
     '#attributes' => array(
       'class' => array('loft-social-links'),
     ),
-    '#attached' => array(
+    '#attached'   => array(
       'library' => array(
         array('loft_social', 'social'),
       ),
@@ -1364,7 +1408,7 @@ function loft_social_ctools_plugin_api($module, $api) {
  */
 function loft_social_fb_social_default_presets() {
   $export = array();
-  
+
   $fb_social_preset = new stdClass();
   $fb_social_preset->disabled = FALSE; /* Edit this to true to make a default fb_social_preset disabled initially */
   $fb_social_preset->api_version = 1;
@@ -1372,43 +1416,43 @@ function loft_social_fb_social_default_presets() {
   $fb_social_preset->description = 'Facebook like button for the current page.';
   $fb_social_preset->plugin_type = 'like';
   $fb_social_preset->settings = array(
-    'node_types' => array(
+    'node_types'      => array(
       'types' => array(
-        'article' => 0,
-        'page' => 0,
-        'testimonial' => 0,
-        'document' => 0,
-        'loft_faq' => 0,
-        'news' => 0,
-        'product' => 0,
+        'article'        => 0,
+        'page'           => 0,
+        'testimonial'    => 0,
+        'document'       => 0,
+        'loft_faq'       => 0,
+        'news'           => 0,
+        'product'        => 0,
         'remote_product' => 0,
       ),
     ),
     'plugin_location' => array(
-      'location' => '0',
+      'location'        => '0',
       'node_view_modes' => array(
-        'full' => 'full',
-        'teaser' => 0,
-        'rss' => 0,
-        'search_index' => 0,
-        'search_result' => 0,
-        'token' => 0,
+        'full'           => 'full',
+        'teaser'         => 0,
+        'rss'            => 0,
+        'search_index'   => 0,
+        'search_result'  => 0,
+        'token'          => 0,
         'fh_common_news' => 0,
       ),
     ),
-    'block' => 0,
+    'block'           => 0,
   );
   $fb_social_preset->fb_attrs = array(
-    'send' => 1,
-    'layout' => 'button_count',
-    'show_faces' => 0,
-    'width' => '128',
-    'action' => 'like',
-    'font' => 'verdana',
+    'send'        => 1,
+    'layout'      => 'button_count',
+    'show_faces'  => 0,
+    'width'       => '128',
+    'action'      => 'like',
+    'font'        => 'verdana',
     'colorscheme' => 'dark',
   );
   $export['loft_social_like'] = $fb_social_preset;
-  
+
   return $export;
 }
 
@@ -1439,8 +1483,8 @@ function loft_social_image_default_styles() {
   $styles['loft_social_og_image_200x'] = array(
     'effects' => array(
       array(
-        'name' => 'image_scale_and_crop',
-        'data' => array('width' => 200, 'height' => 200, 'upscale' => 0),
+        'name'   => 'image_scale_and_crop',
+        'data'   => array('width' => 200, 'height' => 200, 'upscale' => 0),
         'weight' => 0,
       ),
     ),
@@ -1448,8 +1492,8 @@ function loft_social_image_default_styles() {
   $styles['loft_social_og_image_400x'] = array(
     'effects' => array(
       array(
-        'name' => 'image_scale_and_crop',
-        'data' => array('width' => 400, 'height' => 400, 'upscale' => 0),
+        'name'   => 'image_scale_and_crop',
+        'data'   => array('width' => 400, 'height' => 400, 'upscale' => 0),
         'weight' => 0,
       ),
     ),
@@ -1461,25 +1505,26 @@ function loft_social_image_default_styles() {
 /**
  * Implements hook_filter_info().
  *
- * Here we define the different filters provided by the module. For this example,
- * time_filter is a very static and simple replacement, but it requires some
- * preparation of the string because of the special html tags < and >. The
- * foo_filter is more complex, including its own settings and inline tips.
+ * Here we define the different filters provided by the module. For this
+ * example, time_filter is a very static and simple replacement, but it
+ * requires some preparation of the string because of the special html tags <
+ * and >. The foo_filter is more complex, including its own settings and inline
+ * tips.
  */
 function loft_social_filter_info() {
   $filters['loft_social_tweet'] = array(
-    'title' => t('Add a tweet button to certain html elements.'),
+    'title'             => t('Add a tweet button to certain html elements.'),
     'process callback'  => '_loft_social_filter_process',
-    'default settings' => array(
-      'tags' => 'q',
-      'type' => 'button',
-      'position' => 'after',
-      'too_long' => 'skip',
+    'default settings'  => array(
+      'tags'            => 'q',
+      'type'            => 'button',
+      'position'        => 'after',
+      'too_long'        => 'skip',
       // 'too_long_suffix' => json_decode('"\u8230"'),
       'too_long_suffix' => "...",
     ),
     'settings callback' => '_loft_social_filter_settings',
-    'tips callback' => '_loft_social_tips',
+    'tips callback'     => '_loft_social_tips',
   );
 
   return $filters;
@@ -1499,41 +1544,41 @@ function loft_social_filter_info() {
 function _loft_social_filter_settings($form, $form_state, $filter, $format, $defaults) {
   $default_values = $filter->settings + $defaults;
   $settings['tags'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Html tags'),
-    '#description' => t('One or more CSV tags to which tweet buttons will be added.  The innerHTML of the tag will be used as the tweet text.'),
+    '#type'          => 'textfield',
+    '#title'         => t('Html tags'),
+    '#description'   => t('One or more CSV tags to which tweet buttons will be added.  The innerHTML of the tag will be used as the tweet text.'),
     '#default_value' => $default_values['tags'],
-    '#required' => TRUE,
+    '#required'      => TRUE,
   );
   $settings['type'] = array(
-    '#type' => 'select',
-    '#title' => t('Type'),
+    '#type'          => 'select',
+    '#title'         => t('Type'),
     '#default_value' => $default_values['type'],
-    '#required' => TRUE,
-    '#options' => array(
-      'link' => t('Link'),
+    '#required'      => TRUE,
+    '#options'       => array(
+      'link'   => t('Link'),
       'button' => t('Button'),
     ),
   );
   $settings['position'] = array(
-    '#type' => 'select',
-    '#title' => t('Position'),
+    '#type'          => 'select',
+    '#title'         => t('Position'),
     '#default_value' => $default_values['position'],
-    '#required' => TRUE,
-    '#options' => array(
+    '#required'      => TRUE,
+    '#options'       => array(
       'before' => t('Before'),
-      'after' => t('After'),
+      'after'  => t('After'),
     ),
   );
   $settings['too_long'] = array(
-    '#type' => 'select',
-    '#title' => t('When text is too long...'),
+    '#type'          => 'select',
+    '#title'         => t('When text is too long...'),
     '#default_value' => $default_values['too_long'],
-    '#required' => TRUE,
-    '#options' => array(
-      'skip' => t('Skip the tag'),
+    '#required'      => TRUE,
+    '#options'       => array(
+      'skip'     => t('Skip the tag'),
       'truncate' => t('Truncate the quote inside the twitter button'),
-      'add' => t('Add the tweet button anyway'),
+      'add'      => t('Add the tweet button anyway'),
     ),
   );
 
@@ -1571,14 +1616,15 @@ function _loft_social_filter_settings($form, $form_state, $filter, $format, $def
 function _loft_social_filter_process($text, $filter, $format) {
   if ($filter->name === 'loft_social_tweet') {
     try {
-      $obj  = new SocialTweetFilter($filter->settings);
+      $obj = new SocialTweetFilter($filter->settings);
       $text = $obj->replace($text);
     } catch (Exception $e) {
       // @todo Only by permission?
       drupal_set_message($e->getMessage(), 'status', FALSE);
       watchdog_exception('loft_social', $e);
     }
-  }  
+  }
+
   return $text;
 }
 
@@ -1595,7 +1641,7 @@ function _loft_social_tips($filter, $format, $long = FALSE) {
     $f = new SocialTweetFilter($filter->settings);
     $t_vars = array(
       '%tags' => '<' . implode('>, <', $f->tags) . '>',
-      '%pos' => $filter->settings['position'],
+      '%pos'  => $filter->settings['position'],
     );
     if ($long) {
       return t("Add a tweet button %pos to all %tags elements.", $t_vars);
@@ -1615,8 +1661,8 @@ function _loft_social_tips($filter, $format, $long = FALSE) {
  * chars if it is https.
  *
  * @param  string $text The data-text component.
- * @param  string $url The data-url component.
- * @param  string $via The twitter username of the source, i.e., data-via
+ * @param  string $url  The data-url component.
+ * @param  string $via  The twitter username of the source, i.e., data-via
  *
  * @return int The number of chars of the tweet.
  *
@@ -1635,13 +1681,13 @@ function loft_social_tweet_len($text, $url = NULL, $via = NULL) {
     if (strpos($url, 'https')) {
       $repeat++;
     }
-    $url = isset($url) ? str_repeat('*', $repeat) : ''; 
+    $url = isset($url) ? str_repeat('*', $repeat) : '';
   }
 
   $tweet = t('!text !url via @!via', array(
     '!text' => $text,
-    '!url' => $url,
-    '!via' => trim($via, '@'),
+    '!url'  => $url,
+    '!via'  => trim($via, '@'),
   ));
   if (class_exists('Normalizer')) {
     $tweet = Normalizer::normalize($tweet);
@@ -1658,24 +1704,24 @@ class SocialTweetFilter {
   public $tags = array();
 
   protected $settings = array();
-  
+
   /**
    * Constructor
    *
    * @param Array $settings
-   *   - tags string
+   *     - tags string
    *     CSV of tags to replace
-   *   - position string
+   *     - position string
    *     - before
    *     - after
-   *   - too_long
+   *     - too_long
    *     - skip
    */
   public function __construct(Array $settings) {
     $this->settings = $settings;
     $this->tags = array_filter(explode(',', str_replace(' ', '', $this->settings['tags'])));
   }
-  
+
   /**
    * Perform replacements on $text per settings.
    *
@@ -1689,6 +1735,7 @@ class SocialTweetFilter {
     foreach ($this->tags as $tag) {
       $this->replaceTag($text, $tag);
     }
+
     return $text;
   }
 
@@ -1718,7 +1765,7 @@ class SocialTweetFilter {
       }
       $tweet = strip_tags($inner_html);
       $build = $type_function(NULL, $tweet);
-      
+
       // Too long handling.
       if ($build['#loft_social_tweet_remaining'] < 0) {
         if ($this->settings['too_long'] === 'skip') {
@@ -1726,7 +1773,7 @@ class SocialTweetFilter {
         }
         if ($this->settings['too_long'] === 'truncate') {
           $tweet = substr($tweet, 0, strlen($tweet) + $build['#loft_social_tweet_remaining']);
-          
+
           if ($this->settings['too_long_suffix']) {
             $tweet = substr($tweet, 0, -1 * strlen($this->settings['too_long_suffix'])) . $this->settings['too_long_suffix'];
           }
@@ -1738,7 +1785,7 @@ class SocialTweetFilter {
         case 'before':
           $replace = $matches[1][$key] . $tweet . $inner_html . $matches[3][$key];
           break;
-        
+
         case 'after':
           $replace = $matches[1][$key] . $inner_html . $tweet . $matches[3][$key];
           break;

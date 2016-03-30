@@ -119,8 +119,7 @@ function hook_loft_social_page_images_alter(&$files, $context) image file {
  * differs from hook_metatag_metatags_view_alter in that it includes the path
  * and the node if available so you have more context.
  *
- * @param  array &$files An array of image file arrays with at least 'uri' key of
- * images for for this page.  These images will be added to the page as multiple
+ * @param  array &$output An array of metatags.
  * og:image and so forth as appropriate.
  * @param  array $context
  * - path: The unaliased path
@@ -133,6 +132,21 @@ function hook_loft_social_metatags_alter(&$output, $context) {
   if (isset($output['description']['#attached']['drupal_add_html_head'][0][0]['#value'])) {
     $output['description']['#attached']['drupal_add_html_head'][0][0]['#value'] = 'O rly?';
   }
+}
+
+/**
+ * Alter metatags in realtime.
+ *
+ * Use this hook if caching the tags is not possible, such as if the metatag is influence by a GET variable: loft_social_realtime_metatags_query_key
+ *
+ * THIS IS ONLY CALLED WHEN THIS GET VAR IS PRESENT IN THE URL.
+ *
+ * @param $output
+ *
+ * @param $context
+ */
+function hook_loft_social_realtime_metatags_alter(&$output, $context) {
+
 }
 
 /**
