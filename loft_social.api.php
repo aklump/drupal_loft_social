@@ -157,7 +157,7 @@ function hook_loft_social_url_default_alter(&$default) {
  *
  * This allows you to alter the url at the end of loft_social_url().
  */
-function hook_loft_social_url_alter(&$url) {
+function hook_loft_social_url_alter(&$url, $context) {
 
 }
 

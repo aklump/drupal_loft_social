@@ -478,7 +478,8 @@ function loft_social_url($path = NULL) {
       $url = str_replace('https://', 'http://', (string) $url);
     }
 
-    drupal_alter('loft_social_url', $url);
+    $context = array('path' => $path);
+    drupal_alter('loft_social_url', $url, $context);
 
     $urls[$path] = $url;
   }
