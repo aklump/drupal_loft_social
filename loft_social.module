@@ -625,7 +625,7 @@ function loft_social_fb_share_renderable($url = NULL, $attributes = array()) {
  * @param  array  $context
  *                      - subject string The mailto subject.
  *                      - subject_base
- *                      - message_base Teh mailto message.
+ *                      - message_base The mailto message.
  *                      - t array t() arguments for the other context strings.
  * @param         array options
  *                      - string callback Defaults to drupal_html_to_text().
@@ -673,29 +673,75 @@ function loft_social_mailto_renderable($message, $context = array(), $options = 
     ),
   ), $context);
 
-  $query['subject'] = t($context['subject_base'], $context['t']);
-  $query['body'] = t($context['message_base'], $context['t']);
+  $query_raw = array();
+  $query_raw['subject'] = t($context['subject_base'], $context['t']);
+  $query_raw['body'] = t($context['message_base'], $context['t']);
 
   $build = array(
     '#theme'      => 'html_tag',
     '#tag'        => 'a',
     '#attributes' => array(
-      'href'  => 'mailto:?' . drupal_http_build_query($query),
+      'href'  => 'mailto:?' . loft_social_mailto_build_query($query_raw),
       'title' => t('Email'),
       'class' => array('loft-social-mailto'),
     ),
     '#value'      => t('Email'),
   );
-
   $context = array(
     'type'       => 'mailto',
     'service_id' => 'email',
-    'query'      => $query,
+    'query_raw'  => $query_raw,
     'message'    => $context,
   );
   drupal_alter('loft_social_button', $build, $context);
 
   return $build;
+}
+
+/**
+ * Prepare a mailto query string converting html to plaintest and added
+ * appropriate line break encoding.
+ *
+ * @param array  $query
+ *   Assuming the keys subject and body.
+ * @param string $parent
+ *   Internal use only.
+ *
+ * @return string The query string ready for a mailto link.
+ *
+ * @see http://www.ietf.org/rfc/rfc2368.txt
+ * @see drupal_http_build_query().
+ */
+function loft_social_mailto_build_query(array $query, $parent = '') {
+  $params = array();
+
+  foreach ($query as $key => $value) {
+    $key = ($parent ? $parent . '[' . rawurlencode($key) . ']' : rawurlencode($key));
+
+    // Recurse into children.
+    if (is_array($value)) {
+      $params[] = loft_social_mailto_build_query($value, $key);
+    }
+    // If a query parameter value is NULL, only append its key.
+    elseif (!isset($value)) {
+      $params[] = $key;
+    }
+    else {
+      $value = preg_replace('/<br ?\/>/', '<br>', $value);
+      $value = str_replace('<br>', PHP_EOL, $value);
+      $value = drupal_html_to_text($value);
+      preg_match_all('/^.*$/m', $value, $matches);
+      foreach ($matches[0] as &$match) {
+        // For better readability of paths in query strings, we decode slashes.
+        $match = str_replace('%2F', '/', rawurlencode($match));
+      }
+
+      // http://www.ietf.org/rfc/rfc2368.txt 5. Encoding
+      $params[] = $key . '=' . implode('%0D%0A', $matches[0]);
+    }
+  }
+
+  return implode('&', $params);
 }
 
 /**
@@ -1310,7 +1356,7 @@ function loft_social_page_alter(&$page) {
   ) {
     $metatag_region = variable_get('metatag_page_region', 'content');
     $output = array();
-    if (isset($page[$metatag_region]['metatags'])){
+    if (isset($page[$metatag_region]['metatags'])) {
       reset($page[$metatag_region]['metatags']);
       $metatag_key = key($page[$metatag_region]['metatags']);
       $output = $page[$metatag_region]['metatags'][$metatag_key];
