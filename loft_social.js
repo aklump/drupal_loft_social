@@ -66,20 +66,20 @@
    * @param  {string} href
    * @param  {string} title
    */
-  Drupal.loftSocial.popup = function(popup, href, title) {
+  Drupal.loftSocial.popup = function (popup, href, title) {
     window.open(href, title, "status=0,toolbar=0,location=1,menubar=0,directories=0,resizable=1,scrollbars=1,left=" + popup.left + ",top=" + popup.top + ",height=" + popup.height + ",width=" + popup.width);
   };
 
   Drupal.behaviors.loftSocial = {};
   Drupal.behaviors.loftSocial.attach = function () {
-    $('.loft-social-is-popup-ready').each(function() {
+    $('.loft-social-is-popup-ready').each(function () {
       var _ = this;
       $(_).removeClass('loft-social-is-popup-ready');
       var service = $(_).data('loft-social-service');
       if (service) {
-        var title   = $(_).data('loft-social-title');
-        var popup   = Drupal.loftSocial.popups[service];
-        var href    = $(_).attr('href');
+        var title = $(_).data('loft-social-title');
+        var popup = Drupal.loftSocial.popups[service];
+        var href = $(_).attr('href');
 
         $(_).click(function (e) {
           Drupal.loftSocial.popup(popup, href, title);

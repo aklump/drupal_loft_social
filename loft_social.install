@@ -10,43 +10,45 @@
 /**
  * Implements hook_uninstall().
  */
-function loft_social_uninstall() {
-  $vars = db_select('variable', 'v')
-    ->fields('v', array('name'))
-    ->condition('name', 'loft_social%', 'LIKE')
-    ->execute()->fetchCol();
-  foreach ($vars as $var) {
-    variable_del($var);
-  }
-
-  $tables = array('block', 'block_role');
-  foreach ($tables as $table) {
-    if (db_table_exists($table)) {
-      db_delete($table)
-        ->condition('module', 'loft_social')
-        ->execute();
+function loft_social_uninstall()
+{
+    $vars = db_select('variable', 'v')
+        ->fields('v', array('name'))
+        ->condition('name', 'loft_social%', 'LIKE')
+        ->execute()->fetchCol();
+    foreach ($vars as $var) {
+        variable_del($var);
     }
-  }
+
+    $tables = array('block', 'block_role');
+    foreach ($tables as $table) {
+        if (db_table_exists($table)) {
+            db_delete($table)
+                ->condition('module', 'loft_social')
+                ->execute();
+        }
+    }
 }
 
 /**
  * Implements hook_enable().
  */
-function loft_social_enable() {
-  // Message about module settings
-  drupal_set_message(t('You must set your app ID and Base URL immediately at <a href="!url2">!url2</a>. You may also adjust settings for Loft Social Manager by visiting <a href="!url">!url</a>.', array(
-    '!url' => url(LOFT_SOCIAL_URL_SETTINGS),
-    '!url2' => url(LOFT_SOCIAL_URL_FB_SETTINGS),
-  )));
+function loft_social_enable()
+{
+    // Message about module settings
+    drupal_set_message(t('You must set your app ID and Base URL immediately at <a href="!url2">!url2</a>. You may also adjust settings for Loft Social Manager by visiting <a href="!url">!url</a>.', array(
+        '!url' => url(LOFT_SOCIAL_URL_SETTINGS),
+        '!url2' => url(LOFT_SOCIAL_URL_FB_SETTINGS),
+    )));
 
-  try {
-    $num_updated = db_update('system')
-    ->fields(array(
-      'weight' => -1,  
-    ))
-    ->condition('name', 'loft_social')
-    ->execute();
-  } catch (Exception $e) {
-    watchdog_exception('loft_social', $e);
-  }
+    try {
+        $num_updated = db_update('system')
+            ->fields(array(
+                'weight' => -1,
+            ))
+            ->condition('name', 'loft_social')
+            ->execute();
+    } catch (Exception $e) {
+        watchdog_exception('loft_social', $e);
+    }
 }
