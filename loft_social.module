@@ -692,7 +692,7 @@ function loft_social_mailto_renderable($message, $context = array(), $options = 
         't' => array(
             '!site_name' => preg_replace('/https?:\/\//', '', loft_social_base_url()),
             '!subject' => $context['subject'],
-            
+
             // TODO This seems redundante, do we need this AND the callback? 2017-05-15T20:34, aklump
             '!message' => strip_tags($message),
             '!url' => $context['url'],
@@ -850,7 +850,8 @@ function loft_social_get_name($social_key)
  *
  * @return renderable
  *
- * @see http://stackoverflow.com/questions/22778849/twitter-share-button-without-the-twitter-icon-just-the-sharing
+ * @link https://dev.twitter.com/web/tweet-button
+ * @link http://stackoverflow.com/questions/22778849/twitter-share-button-without-the-twitter-icon-just-the-sharing
  */
 function loft_social_tweet_link($url = null, $text = null, $context = array())
 {
