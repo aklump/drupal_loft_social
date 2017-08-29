@@ -16,7 +16,7 @@ define('LOFT_SOCIAL_URL_OG_SETTINGS', 'admin/config/search/metatags/config');
 define('LOFT_SOCIAL_PLACEMENT', 0);
 define('LOFT_SOCIAL_BLOCK_COUNT', 0);
 define('LOFT_SOCIAL_BLOCK_COUNT_WEBSITE', 0);
-define('LOFT_SOCIAL_OG_IMAGE_STYLE', 'loft_social_og_image_400x');
+define('LOFT_SOCIAL_OG_IMAGE_STYLE', 'loft_social_og_image_1200x');
 define('LOFT_SOCIAL_OG_IMAGE_MIN', '200x200');
 define('LOFT_SOCIAL_OG_IMAGE_CT_MAX', 3);
 /**
@@ -1615,6 +1615,19 @@ function loft_social_image_default_styles()
                 'data' => array(
                     'width' => 400,
                     'height' => 400,
+                    'upscale' => 0,
+                ),
+                'weight' => 0,
+            ),
+        ),
+    );
+    $styles['loft_social_og_image_1200x'] = array(
+        'effects' => array(
+            array(
+                'name' => 'image_scale_and_crop',
+                'data' => array(
+                    'width' => 1200,
+                    'height' => 1200,
                     'upscale' => 0,
                 ),
                 'weight' => 0,
