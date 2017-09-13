@@ -33,26 +33,27 @@
    *     - width
    *
    * @see Drupal.loftSocial.popup
+   * @link https://dev.twitter.com/web/intents
    */
   Drupal.loftSocial.popups = {
     facebook: {
       height: 290,
       left: center(screen.width, 670),
       top: center(screen.height, 290),
-      width: 670,
+      width: 670
     },
     twitter: {
       height: 420,
       left: center(screen.width, 550),
       top: center(screen.height, 420),
-      width: 550,
+      width: 550
     },
     pinterest: {
       height: 380,
       left: 0,
       top: 0,
-      width: 535,
-    },
+      width: 535
+    }
   };
 
   /**

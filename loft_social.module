@@ -461,6 +461,8 @@ function loft_social_metatag_config_presave($config, $conf = null)
 /**
  * Return a non-ssl, absolute social safe url.
  *
+ * There is no danger passing $path through this function multiple times.
+ *
  * 1. If absolute and base url matches our social base url then make sure it's
  * http
  * 2. Otherwise if absolute pass through
@@ -632,7 +634,7 @@ function loft_social_fb_share_renderable($url = null, $attributes = array())
         '#attributes' => $attributes,
     );
 
-    $context += array('type' => 'fb_share', 'service_id' => 'facebook');
+    $context = array('type' => 'fb_share', 'service_id' => 'facebook');
     drupal_alter('loft_social_button', $build, $context);
 
     return $build;
@@ -1005,7 +1007,7 @@ function loft_social_tweet_button($url = null, $text = null, $context = array())
 }
 
 /**
- * Add metatags to an element using #loft_social_metataga.
+ * Add metatags to an element using #loft_social_metatags.
  *
  * @param  string $markup  The rendered output
  * @param  array  $element The renderable array
@@ -1018,16 +1020,15 @@ function loft_social_tweet_button($url = null, $text = null, $context = array())
 function loft_social_post_render_meta_tags($markup, $element)
 {
     // Add in meta tags by social_group
-    if (empty($element['#loft_social_metatags'])) {
-        continue;
-    }
-    foreach (element_children($element['#loft_social_metatags']) as $child) {
-        $attributes = $element['#loft_social_metatags'][$child];
-        drupal_add_html_head(array(
-            '#type' => 'html_tag',
-            '#tag' => 'meta',
-            '#attributes' => $attributes,
-        ), $element['#loft_social_metatags']['#service'] . '_' . implode('_', $attributes));
+    if (!empty($element['#loft_social_metatags'])) {
+        foreach (element_children($element['#loft_social_metatags']) as $child) {
+            $attributes = $element['#loft_social_metatags'][$child];
+            drupal_add_html_head(array(
+                '#type' => 'html_tag',
+                '#tag' => 'meta',
+                '#attributes' => $attributes,
+            ), $element['#loft_social_metatags']['#service'] . '_' . implode('_', $attributes));
+        }
     }
 
     return $markup;
