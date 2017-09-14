@@ -22,7 +22,6 @@
  */
 function loft_social_settings($form, &$form_state)
 {
-
     $form['twitter'] = array(
         '#type' => 'fieldset',
         '#title' => t('Twitter'),
@@ -162,16 +161,6 @@ function loft_social_settings($form, &$form_state)
         );
     }
 
-    // if (1) {
-    //   $form['facebook']['og']['manage'] = array(
-    //     '#markup' => t('<p class="error"><strong>og:type:</strong> Please <a href="!url">choose</a> an Open Graph default type for your website.</p>', array (
-    //       '!url' => url(LOFT_SOCIAL_URL_OG_SETTINGS, array(
-    //         'query' => drupal_get_destination(),
-    //       )),
-    //     )),
-    //   );
-    // }
-
     $form['rendering'] = array(
         '#type' => 'fieldset',
         '#title' => t('Placement on Website'),
@@ -180,7 +169,6 @@ function loft_social_settings($form, &$form_state)
     );
 
     $before = variable_get('loft_social_placement', LOFT_SOCIAL_PLACEMENT);
-    // $form['loft_social_placement_before'] = array('#type' => 'value', '#value' => $before);
     $form['rendering']['loft_social_placement'] = array(
         '#type' => 'radios',
         '#title' => t('Page placement of social buttons'),
@@ -193,7 +181,6 @@ function loft_social_settings($form, &$form_state)
             4 => t('Node content <sup>2,3</sup>'),
         ),
     );
-
 
     // Per-path visibility.
     $form['rendering']['path'] = array(

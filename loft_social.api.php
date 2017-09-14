@@ -114,7 +114,7 @@ function hook_loft_social_show_on_page_alter(&$context)
  *                       - style: An image style to be applied to all uris if
  *                       possible or FALSE
  */
-function hook_loft_social_page_images_alter(&$files, $context) image file {
+function hook_loft_social_page_images_alter(&$files, $context) {
     // @todo
 }
 

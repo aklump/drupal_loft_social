@@ -932,6 +932,32 @@ function _loft_social_preprocess_tweet($url = null, $text = null)
 }
 
 /**
+ * Create a custom google classroom  share button.
+ *
+ * @param null  $url
+ * @param array $context
+ *
+ * @return array
+ */
+function loft_social_google_classroom_custom_button($url = null, array $context = array())
+{
+    $build = array(
+        '#type' => 'html_tag',
+        '#tag' => 'a',
+        '#value' => 'Share in Google Classroom',
+        '#attributes' => [
+            'href' => 'https://classroom.google.com/share?url=' . loft_social_url($url),
+        ],
+        '#suffix' => '</a>',
+    );
+
+    $context += array('type' => 'share', 'service_id' => 'google_classroom');
+    drupal_alter('loft_social_button', $build, $context);
+
+    return $build;
+}
+
+/**
  * Returns a render array for a tweet button for the current page.
  *
  * @param string $url

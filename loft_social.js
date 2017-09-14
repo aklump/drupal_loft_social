@@ -53,6 +53,12 @@
       left: 0,
       top: 0,
       width: 535
+    },
+    google_classroom: {
+      height: 595,
+      left: 0,
+      top: 0,
+      width: 640
     }
   };
 

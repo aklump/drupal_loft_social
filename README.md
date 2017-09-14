@@ -18,7 +18,6 @@ Furthermore, it makes sure you use `http` instead of `https` for your social pag
 #### Image
 Upload an image to have the og:image and image_url metatags handled for you.  Delete your image and you can modify these fields in the metatag module as expected.
 
-
 ### Twitter
 * This module works hand-in-hand with [On the Web][on_the_web] to create a tweet button from the account you've entered in On the Web.
 * If you enable [Shorten URLs][shorten], twitter links will be shortened using the chosen service.
