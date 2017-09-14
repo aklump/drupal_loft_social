@@ -19,7 +19,7 @@
  *
  * @code
  *     if (module_exists('loft_social')) {
- *       loft_social_prepare($arg, __FUNCTION__));
+ *       loft_social_prepare($arg, __FUNCTION__);
  *     }
  * @endcode
  *
