@@ -1949,7 +1949,13 @@ class SocialTweetFilter {
         if (strpos($source, "</{$tag}>") === false) {
             return;
         }
-
+        $context = [
+            'filter' => [
+                'settings' => $this->settings,
+                'source' => $source,
+                'tag' => $tag,
+            ],
+        ];
         $type_function = 'loft_social_tweet_button';
         if ($this->settings['type'] === 'link') {
             $type_function = 'loft_social_tweet_link';
@@ -1961,7 +1967,7 @@ class SocialTweetFilter {
                 throw new \InvalidArgumentException("Unclosed or nested <{$tag}> elements would cause recursion.");
             }
             $tweet = strip_tags($inner_html);
-            $build = $type_function(null, $tweet);
+            $build = $type_function(null, $tweet, $context);
 
             // Too long handling.
             if ($build['#loft_social_tweet_remaining'] < 0) {
